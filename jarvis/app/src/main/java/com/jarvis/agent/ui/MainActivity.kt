@@ -35,10 +35,17 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val prefs = JarvisApp.graph.prefs
+        // Debug builds only: the emulator smoke test opens specific screens directly.
+        var startTab = 0
+        if (com.jarvis.agent.BuildConfig.DEBUG) {
+            if (intent.getBooleanExtra("demo_skip_onboarding", false)) prefs.setupDone = true
+            if (intent.hasExtra("demo_urdu")) UiLang.set(intent.getBooleanExtra("demo_urdu", false))
+            startTab = intent.getIntExtra("demo_tab", 0)
+        }
         setContent {
             JarvisTheme {
                 var onboarded by rememberSaveable { mutableStateOf(prefs.setupDone) }
-                var tab by rememberSaveable { mutableStateOf(0) }
+                var tab by rememberSaveable { mutableStateOf(startTab) }
                 if (!onboarded) {
                     Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                         OnboardingScreen(onDone = {
