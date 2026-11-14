@@ -1,0 +1,9 @@
+{
+  "name": "jarvis-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Keeps the Claude API key off the phone. Vercel Function in api/, or run server.js anywhere.",
+  "scripts": { "start": "node server.cjs" },
+  "engines": { "node": ">=18" }
+}

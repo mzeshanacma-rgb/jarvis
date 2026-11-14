@@ -1,3 +1,4 @@
+// CommonJS server for running the proxy yourself (VPS, Docker). On Vercel use api/v1/messages.js instead.
 // Jarvis proxy: keeps your Claude API key on your own server instead of the phone.
 // The phone sends `Authorization: Bearer <JARVIS_TOKEN>`; the proxy checks it, applies a
 // per-token rate limit and a model allow-list, then forwards to api.anthropic.com and

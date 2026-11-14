@@ -136,19 +136,38 @@ save nahi hota. Behtar hifazat ke liye apna proxy chalayein taake Claude key pho
 
 ---
 
-## 7. Apna proxy server (optional)
+## 7. Apna proxy server (optional, tajwez ki jati hai)
 
-`proxy/server.js` (Node 18+, koi dependency nahi): Claude key server par rehti hai, phone sirf ek token bhejta hai.
-Token check, per-token rate limit, model allow-list, aur streaming as-is.
+Claude key phone par rakhne ke bajaye server par rakhein. Phone sirf ek **token** bhejta hai. Proxy token check karta hai,
+rate limit lagata hai, sirf allowed models chalne deta hai aur jawab stream karta hai. Phone ka kill switch connection kat
+deta hai to upstream request bhi band ho jati hai.
+
+### Vercel par (sab se aasaan)
+
+1. Vercel mein *Add New → Project* → GitHub repo `jarvis` chunein → **Root Directory = `proxy`** → Deploy.
+2. *Settings → Environment Variables* mein (Production):
+   - `ANTHROPIC_API_KEY` = aap ki Claude key
+   - `JARVIS_TOKENS` = lamba random token (`openssl rand -hex 24`); kayi phones ho to comma se alag karein
+   - optional: `JARVIS_RPM` (default 30), `JARVIS_MODELS`
+3. Redeploy karein.
+4. Phone par Settings → **API base URL** = `https://<aap-ka-project>.vercel.app/api`, **Proxy token** = wohi token → Save.
+   (Jarvis khud `/v1/messages` jor leta hai.) Phone mein Claude API key khali chhor dein.
+
+Test: `curl -i -X POST https://<project>.vercel.app/api/v1/messages` → `401 Bad proxy token` aana chahiye.
+
+Limits: Vercel function ki max muddat 300s hai; rate limit har warm instance ka apna hai (poori tarah global nahi);
+request body limit 4.5 MB hai (purane screenshots Jarvis khud hata deta hai).
+
+### Apne server par
 
 ```bash
 cd proxy
-ANTHROPIC_API_KEY=sk-ant-... JARVIS_TOKENS=$(openssl rand -hex 24) node server.js
+ANTHROPIC_API_KEY=sk-ant-... JARVIS_TOKENS=$(openssl rand -hex 24) node server.cjs
 ```
 
-Phone par Settings → *API base URL* = `https://aap-ka-server.com` aur *Proxy token* = wohi token.
-(Proxy mode mein `fallbacks` aur `eager_input_streaming` khud band ho jate hain.) HTTPS ke peeche chalayein
-(Caddy/nginx/Cloudflare).
+HTTPS ke peeche chalayein (Caddy/nginx). Phone par API base URL = `https://aap-ka-server.com` (is mein `/api` nahi).
+
+Proxy mode mein `fallbacks` aur `eager_input_streaming` khud band ho jate hain.
 
 ---
 
