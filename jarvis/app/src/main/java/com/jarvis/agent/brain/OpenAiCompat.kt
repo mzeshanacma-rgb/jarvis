@@ -133,6 +133,8 @@ object OpenAiConverter {
                 "tool_use" -> calls += buildJsonObject {
                     put("id", block.str("id").orEmpty())
                     put("type", "function")
+                    // Gemini 3 requires its `thought_signature` to be echoed back on every tool call.
+                    block["extra_content"]?.let { put("extra_content", it) }
                     putJsonObject("function") {
                         put("name", block.str("name").orEmpty())
                         put("arguments", (block.obj("input") ?: JsonObject(emptyMap())).toString())
@@ -178,6 +180,8 @@ object OpenAiConverter {
 class OpenAiStreamAccumulator(private val listener: StreamListener? = null) {
     private class Call(var id: String, var name: String, val index: Int?) {
         val args = StringBuilder()
+        /** Provider-specific data that must be replayed with the call (Gemini's thought_signature). */
+        var extra: JsonElement? = null
     }
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -227,6 +231,7 @@ class OpenAiStreamAccumulator(private val listener: StreamListener? = null) {
                 calls.lastOrNull { it.id == id && id.isNotBlank() } ?: calls.lastOrNull { it.index == index } ?: calls.last()
             }
             if (!isNew && name.isNotBlank() && call.name.isBlank()) call.name = name
+            c["extra_content"]?.let { call.extra = it }
             call.args.append(args)
         }
     }
@@ -248,6 +253,7 @@ class OpenAiStreamAccumulator(private val listener: StreamListener? = null) {
             }
             content += buildJsonObject {
                 put("type", "tool_use"); put("id", c.id); put("name", c.name); put("input", input)
+                c.extra?.let { put("extra_content", it) }
             }
             ToolCall(c.id, c.name, input, raw, error)
         }

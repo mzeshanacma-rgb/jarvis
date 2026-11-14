@@ -18,10 +18,11 @@ enum class Provider(
     val free: Boolean,
 ) {
     GEMINI(
-        "Google Gemini (free)", "gemini-2.5-flash",
+        "Google Gemini (free)", "gemini-3.1-flash-lite",
         "https://generativelanguage.googleapis.com/v1beta/openai",
         SecureStore.Secret.GEMINI_API_KEY,
-        "Free key: aistudio.google.com/apikey (Google account). Urdu aur screenshots dono ke liye behtareen free option.",
+        "Free key: aistudio.google.com/apikey (Google account). Urdu aur screenshots dono ke liye behtareen free option. " +
+            "(Purana gemini-2.5-flash naye users ke liye band hai.)",
         supportsImages = true, free = true,
     ),
     GROQ(

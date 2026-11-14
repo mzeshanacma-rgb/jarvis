@@ -237,6 +237,7 @@ object Messages {
     fun apiError(l: SpokenLanguage, e: ApiException) = when {
         e.type == "missing_api_key" -> if (ur(l)) "AI ki API key set nahi hai, Settings mein daalein." else "The AI API key is not set; add it in Settings."
         e.status == 401 || e.status == 403 -> if (ur(l)) "AI ki API key ghalat lag rahi hai." else "The AI API key looks invalid."
+        e.status == 404 -> if (ur(l)) "Yeh AI model nahi mila, Settings mein model ka naam badlein." else "That AI model was not found; change the model name in Settings."
         e.status == 429 -> if (ur(l)) "Free limit khatam ho gayi, ek minute baad dobara koshish karein." else "The free usage limit was reached; try again in a minute."
         else -> if (ur(l)) "AI service se raabta nahi ho saka." else "I couldn't reach the AI service."
     }

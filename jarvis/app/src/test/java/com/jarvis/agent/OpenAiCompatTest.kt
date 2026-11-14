@@ -159,3 +159,48 @@ class OpenAiCompatTest {
         assertFalse(ModelConfig("claude-sonnet-5-5", "high", directApi = true, isClaude = false).thinkingBetweenTools)
     }
 }
+
+class GeminiSignatureTest {
+    // Real chunk shape returned by the Gemini OpenAI-compatible endpoint (signature shortened).
+    private val realChunk = """{"choices":[{"delta":{"role":"assistant","tool_calls":[{"extra_content":{"google":{"thought_signature":"EnMKcQFp"}},"function":{"arguments":"{}","name":"get_time"},"id":"call_785","type":"function"}]},"index":0}],"model":"gemini-3.1-flash-lite","object":"chat.completion.chunk"}"""
+    private val stopChunk = """{"choices":[{"delta":{"role":"assistant"},"finish_reason":"stop","index":0}],"object":"chat.completion.chunk"}"""
+
+    @Test
+    fun signatureIsCapturedAndReplayed() {
+        val acc = OpenAiStreamAccumulator()
+        acc.onData(realChunk); acc.onData(stopChunk); acc.onData("[DONE]")
+        val turn = acc.build()
+        assertEquals("tool_use", turn.stopReason)
+        assertEquals("get_time", turn.toolCalls[0].name)
+        val block = turn.content[0] as JsonObject
+        assertTrue(block.toString().contains("EnMKcQFp"))
+
+        // next request: the assistant turn is converted back and must carry the signature
+        val msgs = listOf(
+            RequestFactory.userMessage(listOf(RequestFactory.textBlock("time?"))),
+            RequestFactory.assistantMessage(turn.content),
+            RequestFactory.userMessage(listOf(RequestFactory.toolResult("call_785", "12:00", false))),
+        )
+        val req = OpenAiConverter.toChatRequest(
+            RequestFactory.build(ModelConfig("x", "medium", false, isClaude = false), "S", JsonArray(emptyList()), msgs),
+            Provider.GEMINI, "gemini-3.1-flash-lite",
+        )
+        val assistant = req.arr("messages")!!.map { it as JsonObject }.first { it.str("role") == "assistant" }
+        val call = assistant.arr("tool_calls")!![0] as JsonObject
+        assertEquals("EnMKcQFp", call.obj("extra_content")?.obj("google")?.str("thought_signature"))
+        assertEquals("call_785", call.str("id"))
+    }
+
+    @Test
+    fun defaultGeminiModelIsTheCurrentOne() {
+        assertEquals("gemini-3.1-flash-lite", Provider.GEMINI.defaultModel)
+    }
+}
+
+class RetiredModelTest {
+    @Test
+    fun retiredNamesAreNeverUsed() {
+        assertTrue("gemini-2.5-flash" in com.jarvis.agent.core.Prefs.RETIRED_MODELS)
+        assertTrue(Provider.GEMINI.defaultModel !in com.jarvis.agent.core.Prefs.RETIRED_MODELS)
+    }
+}

@@ -63,10 +63,18 @@ class Prefs(context: Context) {
         get() = modelFor(provider)
         set(v) = setModelFor(provider, v)
 
-    fun modelFor(p: Provider): String = sp.getString("model_${p.name}", null) ?: p.defaultModel
+    fun modelFor(p: Provider): String {
+        val stored = sp.getString("model_${p.name}", null)?.trim()
+        return if (stored.isNullOrEmpty() || stored in RETIRED_MODELS) p.defaultModel else stored
+    }
 
+    /** Saving the default name just clears the override, so future default upgrades apply automatically. */
     fun setModelFor(p: Provider, v: String) {
-        sp.edit().putString("model_${p.name}", v.trim().ifEmpty { p.defaultModel }).apply()
+        val name = v.trim()
+        val e = sp.edit()
+        if (name.isEmpty() || name == p.defaultModel || name in RETIRED_MODELS) e.remove("model_${p.name}")
+        else e.putString("model_${p.name}", name)
+        e.apply()
     }
 
     /** Effort for the agent loop. `between_tools` thinking accepts `high` or below. */
@@ -97,5 +105,8 @@ class Prefs(context: Context) {
 
     companion object {
         const val DEFAULT_API_BASE = "https://api.anthropic.com"
+
+        /** Model names providers have shut down; a saved one of these falls back to the current default. */
+        val RETIRED_MODELS = setOf("gemini-2.5-flash", "gemini-2.0-flash")
     }
 }
