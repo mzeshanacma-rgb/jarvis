@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Keeps the Claude API key off the phone. Vercel Function in api/, or run server.js anywhere.",
-  "scripts": { "start": "node server.cjs" },
-  "engines": { "node": ">=18" }
+  "description": "Keeps the Claude API key off the phone. Vercel Function in api/; selfhost/server.cjs runs the same proxy on any server.",
+  "scripts": {
+    "selfhost": "node selfhost/server.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

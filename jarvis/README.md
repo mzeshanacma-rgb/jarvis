@@ -162,7 +162,7 @@ request body limit 4.5 MB hai (purane screenshots Jarvis khud hata deta hai).
 
 ```bash
 cd proxy
-ANTHROPIC_API_KEY=sk-ant-... JARVIS_TOKENS=$(openssl rand -hex 24) node server.cjs
+ANTHROPIC_API_KEY=sk-ant-... JARVIS_TOKENS=$(openssl rand -hex 24) node selfhost/server.cjs
 ```
 
 HTTPS ke peeche chalayein (Caddy/nginx). Phone par API base URL = `https://aap-ka-server.com` (is mein `/api` nahi).
