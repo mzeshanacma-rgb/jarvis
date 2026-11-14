@@ -138,7 +138,9 @@
         <!-- Call assistant (Android 10+, needs the call-screening role) -->
         <service
             android:name=".calls.JarvisCallScreening"
+            android:enabled="@bool/call_screening_supported"
             android:exported="true"
+            tools:targetApi="29"
             android:permission="android.permission.BIND_SCREENING_SERVICE">
             <intent-filter>
                 <action android:name="android.telecom.CallScreeningService" />
