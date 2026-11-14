@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +38,9 @@ fun SettingsScreen() {
     val prefs = graph.prefs
     val secure = graph.secure
     var saved by remember { mutableStateOf(false) }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    var testing by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var provider by remember { mutableStateOf(prefs.provider) }
     val providerKeys = remember { mutableStateMapOf<Provider, String>() }
@@ -131,33 +135,43 @@ fun SettingsScreen() {
         }
         OutlinedTextField(voiceId, { voiceId = it }, label = { Text("ElevenLabs voice ID") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
 
+        val save: () -> Unit = {
+            providerKeys.forEach { (p, v) -> if (v.isNotBlank()) secure.put(p.secret, v) }
+            providerKeys.clear()
+            prefs.provider = provider
+            models.forEach { (p, m) -> prefs.setModelFor(p, m) }
+            if (proxyToken.isNotBlank()) secure.put(Secret.PROXY_TOKEN, proxyToken)
+            if (picovoice.isNotBlank()) secure.put(Secret.PICOVOICE_ACCESS_KEY, picovoice)
+            if (eleven.isNotBlank()) secure.put(Secret.ELEVENLABS_API_KEY, eleven)
+            if (openai.isNotBlank()) secure.put(Secret.OPENAI_API_KEY, openai)
+            proxyToken = ""; picovoice = ""; eleven = ""; openai = ""
+            prefs.apiBaseUrl = baseUrl
+            prefs.effort = effort
+            maxSteps.toIntOrNull()?.let { prefs.maxSteps = it }
+            rpm.toIntOrNull()?.let { prefs.maxRequestsPerMinute = it }
+            taskTimeout.toIntOrNull()?.let { prefs.taskTimeoutSec = it }
+            prefs.elevenLabsVoiceId = voiceId
+            prefs.wakeWordEnabled = wake
+            prefs.overlayEnabled = overlay
+            prefs.startOnBoot = boot
+            prefs.sttEngine = stt
+            prefs.ttsEngine = tts
+            prefs.listenLanguage = lang
+        }
         Button(
-            onClick = {
-                providerKeys.forEach { (p, v) -> if (v.isNotBlank()) secure.put(p.secret, v) }
-                providerKeys.clear()
-                prefs.provider = provider
-                models.forEach { (p, m) -> prefs.setModelFor(p, m) }
-                if (proxyToken.isNotBlank()) secure.put(Secret.PROXY_TOKEN, proxyToken)
-                if (picovoice.isNotBlank()) secure.put(Secret.PICOVOICE_ACCESS_KEY, picovoice)
-                if (eleven.isNotBlank()) secure.put(Secret.ELEVENLABS_API_KEY, eleven)
-                if (openai.isNotBlank()) secure.put(Secret.OPENAI_API_KEY, openai)
-                proxyToken = ""; picovoice = ""; eleven = ""; openai = ""
-                prefs.apiBaseUrl = baseUrl
-                prefs.effort = effort
-                maxSteps.toIntOrNull()?.let { prefs.maxSteps = it }
-                rpm.toIntOrNull()?.let { prefs.maxRequestsPerMinute = it }
-                taskTimeout.toIntOrNull()?.let { prefs.taskTimeoutSec = it }
-                prefs.elevenLabsVoiceId = voiceId
-                prefs.wakeWordEnabled = wake
-                prefs.overlayEnabled = overlay
-                prefs.startOnBoot = boot
-                prefs.sttEngine = stt
-                prefs.ttsEngine = tts
-                prefs.listenLanguage = lang
-                saved = true
-            },
+            onClick = { save(); saved = true },
             modifier = Modifier.fillMaxWidth(),
         ) { Text("Save") }
+        Button(
+            onClick = {
+                save(); saved = true
+                testing = true; testResult = "Test ho raha hai…"
+                scope.launch { testResult = graph.testAi(); testing = false }
+            },
+            enabled = !testing,
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Save + AI connection test karein") }
+        testResult?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         if (saved) Text("Mehfooz ho gaya. Wake word/bubble ki tabdeeli ke liye Jarvis dobara shuru karein.")
     }
 }

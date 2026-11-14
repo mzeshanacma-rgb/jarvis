@@ -75,6 +75,27 @@ class AppGraph(val context: Context) {
         )
     }
 
+    /** Sends a tiny request through the same path real tasks use and returns a human-readable result. */
+    suspend fun testAi(): String {
+        val cfg = claude.currentConfig()
+        val body = com.jarvis.agent.brain.RequestFactory.build(
+            cfg, "Reply with the single word OK.", kotlinx.serialization.json.JsonArray(emptyList()),
+            listOf(com.jarvis.agent.brain.RequestFactory.userMessage(listOf(com.jarvis.agent.brain.RequestFactory.textBlock("ping")))),
+            maxTokens = 64,
+        )
+        val p = prefs.provider
+        return try {
+            val turn = kotlinx.coroutines.withTimeout(40_000L) { claude.stream(body) }
+            "✓ ${p.label} chal raha hai (model: ${cfg.model}). Jawab: ${turn.text.trim().take(60).ifEmpty { "(khali)" }}"
+        } catch (e: com.jarvis.agent.brain.ApiException) {
+            "✗ ${p.label} (model: ${cfg.model}) — HTTP ${e.status} ${e.type}: ${e.message?.take(300)}"
+        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+            "✗ 40 second mein jawab nahi aaya (internet ya model slow hai)."
+        } catch (e: Exception) {
+            "✗ ${e.javaClass.simpleName}: ${e.message?.take(200)}"
+        }
+    }
+
     init {
         KillSwitch.addListener { reason ->
             tasks.cancelAll()
