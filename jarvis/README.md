@@ -281,3 +281,13 @@ rate limiter, wake-word kill-switch timing, WAV header, tool registry aur risk p
 | Volume-down kill switch nahi chalta | Accessibility on honi chahiye |
 | Confirmation screen nahi aati | "Doosri apps ke upar" ijazat dein; notification bhi aati hai |
 | "Claude API key ghalat" | Settings mein dobara key daalein ya proxy URL/token check karein |
+
+---
+
+## 13. APK install masla ("App not installed" / "package invalid")
+
+- Pehle jo bhi purana **Jarvis uninstall** karein (sirf ek dafa — purani builds alag keys se sign thin).
+- Is ke baad ki saari builds ek hi fixed debug key se sign hoti hain, to naya APK purane ke upar seedha install ho jata hai.
+- Direct link: `https://github.com/mzeshanacma-rgb/jarvis/releases/download/latest/jarvis.apk` (file ~21 MB honi chahiye;
+  agar kam ho to dobara download karein). Zip nahi, `.apk` file install karein.
+- Debug key sirf apne istemal ke liye hai; Play Store ke liye apni private key banayein.
