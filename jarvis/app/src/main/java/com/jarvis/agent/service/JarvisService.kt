@@ -20,6 +20,7 @@ import com.jarvis.agent.core.TaskOrigin
 import com.jarvis.agent.overlay.FloatingBubble
 import com.jarvis.agent.safety.ConfirmationBroker
 import com.jarvis.agent.safety.UserSignals
+import com.jarvis.agent.voice.VoiceCommands
 import com.jarvis.agent.voice.VoiceIO
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -80,6 +81,8 @@ class JarvisService : LifecycleService() {
                 onLongPress = { KillSwitch.trigger("bubble long-press") },
             ).also { it.show() }
         }
+        // Live status: the bubble's ring colour follows what Jarvis is doing.
+        lifecycleScope.launch { JarvisRuntime.state.collect { st -> bubble?.setPhase(st.phase) } }
         JarvisRuntime.update { it.copy(serviceRunning = true, phase = idlePhase()) }
     }
 
@@ -87,7 +90,7 @@ class JarvisService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
         if (instance !== this) return START_NOT_STICKY
         when (intent?.action) {
-            ACTION_PUSH_TO_TALK -> startConversation()
+            ACTION_PUSH_TO_TALK -> startConversation(intent.getStringExtra(EXTRA_PREFIX))
             ACTION_RUN_TEXT -> intent.getStringExtra(EXTRA_TEXT)?.let { runCommand(it, TaskOrigin.TYPED) }
             ACTION_STOP -> stopEverything()
         }
@@ -95,7 +98,8 @@ class JarvisService : LifecycleService() {
     }
 
     /** Wake word, bubble tap, notification button or in-app mic button. Interrupts current speech/task. */
-    fun startConversation() {
+    /** [prefix] turns what the user says into a specific request, e.g. "Draft and send this message: …". */
+    fun startConversation(prefix: String? = null) {
         // "Hey Jarvis" / bubble tap while Jarvis waits for the user to finish a hand-over = continue.
         if (UserSignals.signalContinue()) return
         // Never cancel a task while a confirmation is on screen; the user answers there.
@@ -108,7 +112,7 @@ class JarvisService : LifecycleService() {
                 JarvisRuntime.phase(idlePhase())
                 return@launch
             }
-            process(heard, TaskOrigin.VOICE)
+            process(if (prefix.isNullOrBlank()) heard else "$prefix $heard", TaskOrigin.VOICE)
         }
     }
 
@@ -119,6 +123,15 @@ class JarvisService : LifecycleService() {
     }
 
     private suspend fun process(text: String, origin: TaskOrigin) {
+        // "Stop" / "ruko" / "bas" is handled instantly, without the AI.
+        if (VoiceCommands.isStop(text)) {
+            graph.tasks.cancelAll()
+            ConfirmationBroker.denyAll()
+            graph.voice.stopSpeaking()
+            JarvisRuntime.update { it.copy(lastHeard = text, lastReply = "Theek hai, ruk gaya.", phase = idlePhase(), currentAction = "") }
+            graph.voice.speak("Theek hai, ruk gaya.")
+            return
+        }
         JarvisRuntime.update { it.copy(lastHeard = text, phase = AgentPhase.THINKING, currentStep = 0) }
         try {
             val reply = graph.tasks.track { graph.commandHandler.handle(text, origin) }
@@ -186,6 +199,7 @@ class JarvisService : LifecycleService() {
         const val ACTION_PUSH_TO_TALK = "com.jarvis.agent.PTT"
         const val ACTION_RUN_TEXT = "com.jarvis.agent.RUN_TEXT"
         const val EXTRA_TEXT = "text"
+        const val EXTRA_PREFIX = "prefix"
 
         @Volatile
         var instance: JarvisService? = null
@@ -199,8 +213,11 @@ class JarvisService : LifecycleService() {
             context.stopService(Intent(context, JarvisService::class.java))
         }
 
-        fun pushToTalk(context: Context) {
-            ContextCompat.startForegroundService(context, Intent(context, JarvisService::class.java).setAction(ACTION_PUSH_TO_TALK))
+        fun pushToTalk(context: Context, prefix: String? = null) {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, JarvisService::class.java).setAction(ACTION_PUSH_TO_TALK).putExtra(EXTRA_PREFIX, prefix),
+            )
         }
 
         fun runText(context: Context, text: String) {

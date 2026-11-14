@@ -22,8 +22,8 @@ class ToolRegistry {
     val all: Collection<Tool> get() = tools.values
 
     /** Tool definitions for the Messages API. */
-    fun apiDefinitions(eagerInputStreaming: Boolean): JsonArray = JsonArray(
-        tools.values.map { t ->
+    fun apiDefinitions(eagerInputStreaming: Boolean, only: Set<String>? = null): JsonArray = JsonArray(
+        tools.values.filter { only == null || it.name in only }.map { t ->
             buildJsonObject {
                 put("name", t.name)
                 put("description", t.description + " [risk: ${t.baseRisk.name.lowercase()}]")

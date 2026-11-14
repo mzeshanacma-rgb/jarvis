@@ -11,6 +11,19 @@ line** bol kar batata hai ke kya hua.
 
 ---
 
+## Naya kya hai (0.7 — dobara design)
+
+- **Naya design:** 3 tabs (Home, Sargarmi, Settings), chat jaisa Home, animated mic orb, English / Roman Urdu app.
+- **4 qadam ka setup:** zabaan → free Gemini key (test ke saath) → zaroori ijazatein → tayyar.
+- **Quick actions:** Briefing, Zaroori kya hai, Message likhwayein, Screen ka khulasa, Reminder.
+- **Naye kaam:** missed calls (call log), ek dafa ke reminders, PDF parhna (scanned bhi), "stop/ruko" fori.
+- **Tez aur sasta:** jawab bolna stream ke saath shuru; free AI ko sirf zaroori tools bheje jaate hain.
+- **Kam rukawat:** "Allow/Accept/Update" jaise aam buttons ab confirmation nahi maangte; Send/Pay/Delete ab bhi maangte hain.
+- **Theek kiye gaye bugs:** screen badalne par ghalat tap, English ka ghalat sunna (Mixed mode ab en-IN), non-English
+  Gmail mein Send, Settings ka neeche chhupa Save (ab har cheez foran save hoti hai), Sargarmi export.
+
+---
+
 ## 1. Milestones (har ek compile aur test hota hai)
 
 | # | Milestone | Kya shamil hai |

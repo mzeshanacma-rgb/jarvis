@@ -73,7 +73,7 @@ class AndroidSpeechInput(private val context: Context) : SpeechInput {
                     putExtra(RecognizerIntent.EXTRA_ENABLE_LANGUAGE_DETECTION, true)
                     putExtra(
                         RecognizerIntent.EXTRA_LANGUAGE_DETECTION_ALLOWED_LANGUAGES,
-                        arrayListOf("ur-PK", "en-US", "en-IN"),
+                        arrayListOf("en-IN", "ur-PK", "en-US"),
                     )
                 }
             }

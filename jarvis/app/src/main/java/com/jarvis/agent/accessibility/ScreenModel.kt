@@ -46,6 +46,16 @@ data class ScreenSnapshot(
     /** Text currently typed into input fields (shown in "send" confirmations). */
     fun editableTexts(): List<String> = nodes.filter { it.editable && !it.password && !it.text.isNullOrBlank() }.map { it.text!! }
 
+    /**
+     * Finds, in this (fresh) snapshot, the element the model saw as [old] in an earlier snapshot. Element ids are
+     * renumbered on every read, so we match by label and position instead of trusting the id.
+     */
+    fun match(old: UiNode, tolerancePx: Int = 64): UiNode? {
+        val sameLabel = nodes.filter { it.label == old.label && it.className == old.className }
+        return sameLabel.minByOrNull { kotlin.math.abs(it.centerX - old.centerX) + kotlin.math.abs(it.centerY - old.centerY) }
+            ?.takeIf { kotlin.math.abs(it.centerX - old.centerX) <= tolerancePx && kotlin.math.abs(it.centerY - old.centerY) <= tolerancePx }
+    }
+
     fun allText(): String = nodes.joinToString(" ") { listOfNotNull(it.text, it.description).joinToString(" ") }
 
     fun findByText(query: String): UiNode? {

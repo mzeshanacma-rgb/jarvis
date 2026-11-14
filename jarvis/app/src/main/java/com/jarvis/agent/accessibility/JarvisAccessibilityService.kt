@@ -37,6 +37,9 @@ class JarvisAccessibilityService : AccessibilityService() {
     @Volatile var foregroundPackage: String = ""
         private set
 
+    /** The last screen the model was shown; its element ids are the ones the model will refer to. */
+    @Volatile var lastShown: ScreenSnapshot? = null
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this

@@ -43,6 +43,9 @@
     <!-- Milestone 4: notifications + vision -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
+    <!-- Briefings: missed calls -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />

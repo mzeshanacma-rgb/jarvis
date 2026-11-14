@@ -6,39 +6,30 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.fragment.app.FragmentActivity
 import com.jarvis.agent.JarvisApp
-import com.jarvis.agent.service.JarvisService
-import com.jarvis.agent.ui.setup.PermissionSetupScreen
+import com.jarvis.agent.ui.theme.JarvisBg
+import com.jarvis.agent.ui.theme.JarvisSurface2
 import com.jarvis.agent.ui.theme.JarvisTheme
 
-enum class Screen(val label: String, val icon: ImageVector) {
-    HOME("Home", Icons.Filled.Home),
-    LOG("Log", Icons.Filled.History),
-    MEMORY("Memory", Icons.Filled.Psychology),
-    SETUP("Permissions", Icons.Filled.Security),
-    SETTINGS("Settings", Icons.Filled.Settings),
-}
-
-/** FragmentActivity (not ComponentActivity) so BiometricPrompt can be used by child screens. */
+/** FragmentActivity (not ComponentActivity) so BiometricPrompt can be used. */
 class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,43 +37,46 @@ class MainActivity : FragmentActivity() {
         val prefs = JarvisApp.graph.prefs
         setContent {
             JarvisTheme {
-                var screen by rememberSaveable { mutableStateOf(if (prefs.setupDone) Screen.HOME else Screen.SETUP) }
-                Scaffold(
-                    bottomBar = {
-                        NavigationBar {
-                            Screen.entries.forEach { s ->
-                                NavigationBarItem(
-                                    selected = screen == s,
-                                    onClick = { screen = s },
-                                    icon = { Icon(s.icon, contentDescription = s.label) },
-                                    label = { Text(s.label) },
-                                )
+                var onboarded by rememberSaveable { mutableStateOf(prefs.setupDone) }
+                var tab by rememberSaveable { mutableStateOf(0) }
+                if (!onboarded) {
+                    Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                        OnboardingScreen(onDone = {
+                            finishOnboarding(this@MainActivity)
+                            onboarded = true
+                        })
+                    }
+                } else {
+                    Scaffold(
+                        containerColor = Color.Transparent,
+                        bottomBar = {
+                            NavigationBar(containerColor = JarvisBg.copy(alpha = 0.96f)) {
+                                listOf(
+                                    Triple(Icons.Filled.Home, tr("Home", "Home"), 0),
+                                    Triple(Icons.Filled.Timeline, tr("Activity", "Sargarmi"), 1),
+                                    Triple(Icons.Filled.Settings, tr("Settings", "Settings"), 2),
+                                ).forEach { (icon, label, i) ->
+                                    NavigationBarItem(
+                                        selected = tab == i,
+                                        onClick = { tab = i },
+                                        icon = { Icon(icon, contentDescription = label) },
+                                        label = { Text(label) },
+                                        colors = NavigationBarItemDefaults.colors(indicatorColor = JarvisSurface2),
+                                    )
+                                }
                             }
-                        }
-                    },
-                ) { padding ->
-                    Box(Modifier.fillMaxSize().padding(padding)) {
-                        ScreenContent(screen) { next ->
-                            if (next == Screen.HOME && !prefs.setupDone) {
-                                prefs.setupDone = true
-                                JarvisService.start(this@MainActivity)
+                        },
+                    ) { padding ->
+                        Box(Modifier.fillMaxSize().padding(padding)) {
+                            when (tab) {
+                                0 -> HomeScreen(openSettings = { tab = 2 })
+                                1 -> ActivityScreen()
+                                else -> SettingsScreen()
                             }
-                            screen = next
                         }
                     }
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ScreenContent(screen: Screen, navigate: (Screen) -> Unit) {
-    when (screen) {
-        Screen.HOME -> HomeScreen()
-        Screen.LOG -> ActionLogScreen()
-        Screen.MEMORY -> MemoryScreen()
-        Screen.SETUP -> PermissionSetupScreen(onFinished = { navigate(Screen.HOME) })
-        Screen.SETTINGS -> SettingsScreen()
     }
 }

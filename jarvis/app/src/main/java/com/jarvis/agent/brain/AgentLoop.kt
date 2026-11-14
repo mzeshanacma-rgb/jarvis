@@ -21,6 +21,8 @@ import com.jarvis.agent.voice.SpokenLanguage
 import com.jarvis.agent.voice.VoiceIO
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.coroutineScope
+import com.jarvis.agent.voice.StreamingSpeaker
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
@@ -63,8 +65,13 @@ class AgentLoop(
         val taskId = System.currentTimeMillis()
         val language = LanguageDetector.detect(text)
         log.log(taskId, "TASK", text, detail = "origin=$origin")
+        var alreadySpoken = false
         val reply = try {
-            withTimeout(graph.prefs.taskTimeoutSec * 1000L) { runTask(taskId, text, origin, language) }
+            withTimeout(graph.prefs.taskTimeoutSec * 1000L) {
+                val (r, spoken) = runTask(taskId, text, origin, language)
+                alreadySpoken = spoken
+                r
+            }
         } catch (e: TimeoutCancellationException) {
             Messages.timeLimit(language)
         } catch (e: CancellationException) {
@@ -80,14 +87,27 @@ class AgentLoop(
             Messages.genericError(language)
         }
         log.log(taskId, "REPLY", reply)
+        // Every outcome (including errors) goes into the conversation history shown on the Home screen.
+        runCatching { memory().onTaskFinished(text, reply, JarvisRuntime.state.value.currentStep) }
         JarvisRuntime.update { it.copy(lastReply = reply, currentAction = "") }
-        voice.speak(reply, LanguageDetector.detect(reply).takeIf { it != SpokenLanguage.ENGLISH } ?: language)
+        if (!alreadySpoken) voice.speak(reply, speechLanguage(reply, language))
         return reply
     }
 
-    private suspend fun runTask(taskId: Long, text: String, origin: TaskOrigin, language: SpokenLanguage): String {
+    private fun speechLanguage(text: String, fallback: SpokenLanguage) =
+        LanguageDetector.detect(text).takeIf { it != SpokenLanguage.ENGLISH } ?: fallback
+
+    /** Returns the reply and whether it was already spoken while streaming. */
+    private suspend fun runTask(
+        taskId: Long, text: String, origin: TaskOrigin, language: SpokenLanguage,
+    ): Pair<String, Boolean> = coroutineScope {
         val config = claude.currentConfig()
-        val tools = registry.apiDefinitions(eagerInputStreaming = config.directApi)
+        // Free providers get only the tool groups this request needs; Claude gets all (cached, history-safe).
+        val activeGroups: MutableSet<String>? = if (config.isClaude) null else ToolRouting.groupsFor(text)
+        fun toolsNow() = registry.apiDefinitions(
+            eagerInputStreaming = config.directApi,
+            only = activeGroups?.let { ToolRouting.toolNames(it) },
+        )
         val ctx = ToolContext(graph.context, graph, origin, taskId)
         val mem = memory()
         val messages = mutableListOf(
@@ -105,19 +125,34 @@ class AgentLoop(
             JarvisRuntime.update { it.copy(currentStep = step, phase = AgentPhase.THINKING) }
             rateLimiter.acquire()
             if (config.canPruneHistory) RequestFactory.pruneOldImages(messages)
-            val body = RequestFactory.build(config, SystemPrompt.TEXT, tools, messages)
-            val turn = withTimeoutOrNull(MODEL_TIMEOUT_MS) { claude.stream(body) }
-                ?: return Messages.modelTimeout(language)
+            val body = RequestFactory.build(config, SystemPrompt.TEXT, toolsNow(), messages)
+            val speaker = StreamingSpeaker(this) { sentence -> voice.speak(sentence, speechLanguage(sentence, language)) }
+            val listener = object : StreamListener {
+                override fun onTextDelta(text: String) = speaker.onDelta(text)
+                override fun onToolUseStart(name: String) = speaker.onToolUseStart()
+            }
+            val turn = withTimeoutOrNull(MODEL_TIMEOUT_MS) { claude.stream(body, listener) }
+            if (turn == null) {
+                speaker.abandon()
+                return@coroutineScope Messages.modelTimeout(language) to false
+            }
             messages += RequestFactory.assistantMessage(turn.content)
+
+            suspend fun final(modelText: String): Pair<String, Boolean> {
+                speaker.finishAndWait()
+                return finish(taskId, text, modelText, step, language) to speaker.spokeAnything
+            }
 
             when (turn.stopReason) {
                 "refusal" -> {
+                    speaker.abandon()
                     log.log(taskId, "ERROR", "Model declined", detail = turn.stopDetails?.toString())
-                    return Messages.refused(language)
+                    return@coroutineScope Messages.refused(language) to false
                 }
-                "pause_turn" -> continue
+                "pause_turn" -> { speaker.abandon(); continue }
                 "tool_use", "max_tokens" -> {
-                    if (turn.toolCalls.isEmpty()) return finish(taskId, text, turn.text, step, language)
+                    if (turn.toolCalls.isEmpty()) return@coroutineScope final(turn.text)
+                    speaker.abandon()
                     val truncated = turn.stopReason == "max_tokens"
                     val results = turn.toolCalls.map { call ->
                         if (truncated) {
@@ -125,20 +160,22 @@ class AgentLoop(
                         } else {
                             val (block, suspicious) = runTool(call, ctx, language, suspiciousDataSeen)
                             if (suspicious) suspiciousDataSeen = true
+                            if (call.name == "enable_tools" && activeGroups != null) {
+                                call.input.str("group")?.let { g -> if (g in ToolRouting.groups) activeGroups += g }
+                            }
                             block
                         }
                     }
                     messages += RequestFactory.userMessage(results)
                 }
-                else -> return finish(taskId, text, turn.text, step, language)
+                else -> return@coroutineScope final(turn.text)
             }
         }
-        return Messages.stepLimit(language, maxSteps)
+        Messages.stepLimit(language, maxSteps) to false
     }
 
     private suspend fun finish(taskId: Long, userText: String, modelText: String, steps: Int, language: SpokenLanguage): String {
         val reply = modelText.trim().ifEmpty { Messages.done(language) }
-        runCatching { memory().onTaskFinished(userText, reply, steps) }
         log.log(taskId, "RESULT", "Finished in $steps step(s)")
         return reply
     }

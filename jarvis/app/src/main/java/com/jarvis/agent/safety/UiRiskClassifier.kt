@@ -25,9 +25,11 @@ object UiRiskClassifier {
     )
 
     private val mediumWords = words(
+        // Only actions that send, publish, call, install or commit. Everyday buttons such as "Allow", "Accept",
+        // "Update" or "Join" are not here: confirming them interrupted normal use far too often.
         "send", "send message", "post", "share", "publish", "tweet", "reply", "comment", "call", "video call",
-        "voice call", "install", "update", "accept", "allow", "grant", "upload", "submit", "book", "reserve", "follow",
-        "sign out", "log out", "logout", "forward", "invite", "join", "save changes", "confirm", "agree",
+        "voice call", "install", "upload", "submit", "book", "reserve",
+        "sign out", "log out", "logout", "forward", "invite",
         "bhejo", "bhejein", "bhej do", "call karo", "ارسال", "بھیجیں", "بھیجو", "کال",
     )
 

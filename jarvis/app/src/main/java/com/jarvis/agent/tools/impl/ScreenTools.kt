@@ -56,8 +56,14 @@ internal object Ui {
     /** Snapshot after an action has had time to settle, returned as untrusted screen data. */
     suspend fun observe(service: JarvisAccessibilityService, what: String): ToolResult {
         delay(SETTLE_MS)
+        return ToolResult.untrusted("screen", "$what\nScreen now:\n${show(service)}")
+    }
+
+    /** Takes a snapshot, remembers it as what the model has seen, and renders it. */
+    fun show(service: JarvisAccessibilityService): String {
         val snap = service.snapshot()
-        return ToolResult.untrusted("screen", "$what\nScreen now:\n${snap.render()}")
+        service.lastShown = snap
+        return snap.render()
     }
 
     /** Element addressing shared by tap/long_press/type: element id, visible text, or coordinates. */
@@ -74,7 +80,8 @@ internal object Ui {
         val snap = service.snapshot()
         val id = input.int("element")
         val node = when {
-            id != null -> snap.node(id)
+            // Ids are renumbered on every read: find the element the model actually saw, by label and position.
+            id != null -> service.lastShown?.node(id)?.let { seen -> snap.match(seen) } ?: snap.node(id)?.takeIf { service.lastShown == null }
             input.str("text") != null -> snap.findByText(input.str("text")!!)
             else -> null
         }
@@ -116,7 +123,7 @@ class ReadScreenTool : BaseTool(
     override suspend fun execute(input: JsonObject, ctx: ToolContext): ToolResult {
         val s = Ui.service() ?: return Ui.unavailable()
         Ui.ensureUsable(ctx.app)?.let { return it }
-        return ToolResult.untrusted("screen", s.snapshot().render())
+        return ToolResult.untrusted("screen", Ui.show(s))
     }
 }
 
@@ -226,7 +233,7 @@ class TypeTextTool : BaseTool(
         val s = Ui.service() ?: return Ui.unavailable()
         Ui.ensureUsable(ctx.app)?.let { return it }
         val snap = s.snapshot()
-        val uiNode: UiNode? = input.int("element")?.let { snap.node(it) }
+        val uiNode: UiNode? = input.int("element")?.let { id -> s.lastShown?.node(id)?.let { snap.match(it) } ?: snap.node(id) }
             ?: input.str("field_text")?.let { snap.findByText(it) }
             ?: snap.nodes.firstOrNull { it.editable && it.focused }
             ?: snap.nodes.firstOrNull { it.editable }
@@ -369,7 +376,8 @@ class SendEmailTool : BaseTool(
             delay(400)
             val snap = s.snapshot()
             val send = snap.nodes.firstOrNull { n ->
-                n.viewId?.endsWith(":id/send") == true || n.description.equals("Send", ignoreCase = true)
+                n.viewId?.endsWith(":id/send") == true ||
+                    n.description?.trim()?.lowercase() in setOf("send", "ارسال", "بھیجیں", "bhejein", "enviar", "envoyer", "senden", "إرسال")
             }
             if (send != null) {
                 val ok = s.handle(send.id)?.let { s.click(it) } == true || s.tapAt(send.centerX, send.centerY)

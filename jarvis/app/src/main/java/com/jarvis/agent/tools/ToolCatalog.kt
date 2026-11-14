@@ -54,12 +54,16 @@ import com.jarvis.agent.tools.impl.RecallTool
 import com.jarvis.agent.tools.impl.RememberTool
 import com.jarvis.agent.tools.impl.SaveNicknameTool
 import com.jarvis.agent.tools.impl.UpdateRoutineTool
+import com.jarvis.agent.tools.impl.EnableToolsTool
+import com.jarvis.agent.tools.impl.ReadCallLogTool
+import com.jarvis.agent.tools.impl.ReadPdfPageTool
+import com.jarvis.agent.tools.impl.SetReminderTool
 
 /** The single place where tools are registered. Add new tools here. */
 object ToolCatalog {
     fun build(): ToolRegistry = ToolRegistry().register(
         // conversation & control
-        AskUserTool(), HandOffTool(), WaitTool(), GetTimeTool(), DeviceStatusTool(),
+        AskUserTool(), HandOffTool(), WaitTool(), GetTimeTool(), DeviceStatusTool(), EnableToolsTool(),
         // screen control (any app)
         ReadScreenTool(), ScreenshotTool(), TapTool(), LongPressTool(), TypeTextTool(), ScrollTool(), SwipeTool(), PressKeyTool(),
         // notifications
@@ -69,9 +73,9 @@ object ToolCatalog {
         // apps & links
         ListAppsTool(), LaunchAppTool(), OpenUrlTool(),
         // communication
-        SearchContactsTool(), MakeCallTool(), SendSmsTool(), ReadSmsTool(), SendEmailTool(),
+        SearchContactsTool(), MakeCallTool(), SendSmsTool(), ReadSmsTool(), SendEmailTool(), ReadCallLogTool(),
         // time
-        SetAlarmTool(), SetTimerTool(), ReadCalendarTool(), AddCalendarEventTool(), DeleteCalendarEventTool(),
+        SetAlarmTool(), SetTimerTool(), SetReminderTool(), ReadCalendarTool(), AddCalendarEventTool(), DeleteCalendarEventTool(),
         // device
         SetVolumeTool(), SetBrightnessTool(), SetDndTool(), FlashlightTool(), OpenSettingsTool(),
         ClipboardReadTool(), ClipboardWriteTool(), GetLocationTool(),
@@ -79,6 +83,6 @@ object ToolCatalog {
         RememberTool(), RecallTool(), ForgetTool(), SaveNicknameTool(),
         CreateRoutineTool(), ListRoutinesTool(), UpdateRoutineTool(), DeleteRoutineTool(),
         // web & files
-        WebSearchTool(), ReadWebPageTool(), ListFilesTool(), ReadTextFileTool(), DeleteFileTool(),
+        WebSearchTool(), ReadWebPageTool(), ListFilesTool(), ReadTextFileTool(), ReadPdfPageTool(), DeleteFileTool(),
     )
 }

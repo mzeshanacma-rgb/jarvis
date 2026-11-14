@@ -131,8 +131,8 @@ object PermissionCatalog {
         add(
             runtimeItem(
                 "phone", "Phone calls", required = false,
-                why = "Aap ke kehne par call milane ke liye. Har call se pehle Jarvis aap se tasdeeq karega.",
-                perms = listOf(Manifest.permission.CALL_PHONE),
+                why = "Aap ke kehne par call milane aur briefing mein missed calls batane ke liye. Har call se pehle Jarvis tasdeeq karega.",
+                perms = listOf(Manifest.permission.CALL_PHONE, Manifest.permission.READ_CALL_LOG),
             )
         )
         add(

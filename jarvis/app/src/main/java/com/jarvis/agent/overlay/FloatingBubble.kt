@@ -92,6 +92,26 @@ class FloatingBubble(
         runCatching { wm.addView(v, params) }.onSuccess { view = v }
     }
 
+    /** Ring colour shows the state: cyan idle, green listening, amber working, violet speaking, red confirm. */
+    fun setPhase(phase: com.jarvis.agent.core.AgentPhase) {
+        val v = view ?: return
+        val color = when (phase) {
+            com.jarvis.agent.core.AgentPhase.LISTENING -> 0xFF22C55E.toInt()
+            com.jarvis.agent.core.AgentPhase.THINKING, com.jarvis.agent.core.AgentPhase.ACTING -> 0xFFF59E0B.toInt()
+            com.jarvis.agent.core.AgentPhase.SPEAKING -> 0xFF8B5CF6.toInt()
+            com.jarvis.agent.core.AgentPhase.WAITING_CONFIRMATION -> 0xFFEF4444.toInt()
+            else -> 0xFF22D3EE.toInt()
+        }
+        v.post {
+            v.background = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(0xE60B1320.toInt())
+                setStroke(dp(4), color)
+            }
+            v.contentDescription = "Jarvis: ${phase.name.lowercase()}"
+        }
+    }
+
     fun hide() {
         view?.let { runCatching { wm.removeView(it) } }
         view = null

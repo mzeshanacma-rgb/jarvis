@@ -8,7 +8,11 @@ enum class SttEngine { ANDROID, WHISPER }
 enum class TtsEngine { ANDROID, ELEVENLABS }
 
 /** User preference for the language Jarvis listens in. AUTO lets the recognizer detect Urdu/English. */
-enum class ListenLanguage(val tag: String) { AUTO("ur-PK"), URDU("ur-PK"), ENGLISH("en-US") }
+/**
+ * AUTO = mixed Urdu/English. Below Android 14 the recognizer cannot auto-detect, and "ur-PK" garbles English,
+ * so AUTO uses "en-IN", which handles English plus Urdu/Hindi words (written in Roman script) well.
+ */
+enum class ListenLanguage(val tag: String) { AUTO("en-IN"), URDU("ur-PK"), ENGLISH("en-US") }
 
 /**
  * Non-secret settings. Secrets (API keys) live in [SecureStore], never here.
@@ -93,6 +97,11 @@ class Prefs(context: Context) {
     var taskTimeoutSec: Int
         get() = sp.getInt("task_timeout", 300)
         set(v) = sp.edit().putInt("task_timeout", v.coerceIn(30, 900)).apply()
+
+    /** App interface language: false = English, true = Roman Urdu. */
+    var uiUrdu: Boolean
+        get() = sp.getBoolean("ui_urdu", false)
+        set(v) = sp.edit().putBoolean("ui_urdu", v).apply()
 
     var setupDone: Boolean
         get() = sp.getBoolean("setup_done", false)
