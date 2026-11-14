@@ -120,6 +120,22 @@ object PermissionCatalog {
                 ),
             )
         )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            add(
+                PermissionItem(
+                    id = "call_screening", title = "Call assistant", required = false,
+                    why = "Kaun call kar raha hai bata dena, meeting/driving mein calls khamosh karna aur (agar aap chahein) " +
+                        "\"baad mein call karunga\" SMS bhejna. Unknown numbers ko khamosh karna.",
+                    settingsIntent = { ctx ->
+                        ctx.getSystemService(android.app.role.RoleManager::class.java)!!
+                            .createRequestRoleIntent(android.app.role.RoleManager.ROLE_CALL_SCREENING)
+                    },
+                    isGranted = { ctx ->
+                        ctx.getSystemService(android.app.role.RoleManager::class.java)?.isRoleHeld(android.app.role.RoleManager.ROLE_CALL_SCREENING) == true
+                    },
+                )
+            )
+        }
         // Milestone 2: tools
         add(
             runtimeItem(

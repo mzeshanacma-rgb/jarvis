@@ -103,6 +103,54 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("ui_urdu", false)
         set(v) = sp.edit().putBoolean("ui_urdu", v).apply()
 
+    // ---- privacy
+    /** Apps Jarvis must never read or operate (banking, official apps…). */
+    var privateApps: Set<String>
+        get() = sp.getStringSet("private_apps", emptySet())!!.toSet()
+        set(v) = sp.edit().putStringSet("private_apps", v).apply()
+
+    /** Incognito: no conversation history and no new memories are saved (the safety log is still kept). */
+    var incognito: Boolean
+        get() = sp.getBoolean("incognito", false)
+        set(v) = sp.edit().putBoolean("incognito", v).apply()
+
+    /** Ask for fingerprint / screen lock when opening the app. */
+    var appLock: Boolean
+        get() = sp.getBoolean("app_lock", false)
+        set(v) = sp.edit().putBoolean("app_lock", v).apply()
+
+    // ---- modes
+    var drivingMode: Boolean
+        get() = sp.getBoolean("driving", false)
+        set(v) = sp.edit().putBoolean("driving", v).apply()
+
+    /** While driving: auto-reply "I'm driving" to message notifications (opt-in, fixed text). */
+    var drivingAutoReply: Boolean
+        get() = sp.getBoolean("driving_reply", false)
+        set(v) = sp.edit().putBoolean("driving_reply", v).apply()
+
+    /** Busy (meeting) mode: incoming calls are silenced; optionally an SMS "will call back" is sent. */
+    var busyMode: Boolean
+        get() = sp.getBoolean("busy", false)
+        set(v) = sp.edit().putBoolean("busy", v).apply()
+
+    var busyAutoSms: Boolean
+        get() = sp.getBoolean("busy_sms", false)
+        set(v) = sp.edit().putBoolean("busy_sms", v).apply()
+
+    var announceCalls: Boolean
+        get() = sp.getBoolean("announce_calls", true)
+        set(v) = sp.edit().putBoolean("announce_calls", v).apply()
+
+    var silenceUnknownCallers: Boolean
+        get() = sp.getBoolean("silence_unknown", false)
+        set(v) = sp.edit().putBoolean("silence_unknown", v).apply()
+
+    /** Home Assistant base URL, e.g. https://home.example.com or http://homeassistant.local:8123 */
+    var homeAssistantUrl: String
+        get() = sp.getString("ha_url", null).orEmpty()
+        set(v) = sp.edit().putString("ha_url", v.trim().trimEnd('/')).apply()
+
     var setupDone: Boolean
         get() = sp.getBoolean("setup_done", false)
         set(v) = sp.edit().putBoolean("setup_done", v).apply()

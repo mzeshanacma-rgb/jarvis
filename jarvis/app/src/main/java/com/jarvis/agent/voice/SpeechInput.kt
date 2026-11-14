@@ -34,14 +34,14 @@ import kotlin.math.sqrt
 
 interface SpeechInput {
     /** Listens for one utterance. Returns null on silence, error or cancellation. */
-    suspend fun listen(language: ListenLanguage): String?
+    suspend fun listen(language: ListenLanguage, tagOverride: String? = null): String?
 }
 
 /** On-device / Google speech recognition. Supports ur-PK and en-US (auto-detect on Android 14+). */
 class AndroidSpeechInput(private val context: Context) : SpeechInput {
     private val main = Handler(Looper.getMainLooper())
 
-    override suspend fun listen(language: ListenLanguage): String? = withContext(Dispatchers.Main) {
+    override suspend fun listen(language: ListenLanguage, tagOverride: String?): String? = withContext(Dispatchers.Main) {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) return@withContext null
         suspendCancellableCoroutine { cont ->
             val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
@@ -65,11 +65,11 @@ class AndroidSpeechInput(private val context: Context) : SpeechInput {
             })
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                putExtra(RecognizerIntent.EXTRA_LANGUAGE, language.tag)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, tagOverride ?: language.tag)
                 putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                 putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500L)
                 putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-                if (language == ListenLanguage.AUTO && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (tagOverride == null && language == ListenLanguage.AUTO && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     putExtra(RecognizerIntent.EXTRA_ENABLE_LANGUAGE_DETECTION, true)
                     putExtra(
                         RecognizerIntent.EXTRA_LANGUAGE_DETECTION_ALLOWED_LANGUAGES,
@@ -94,14 +94,14 @@ class WhisperSpeechInput(
     private val secure: SecureStore,
 ) : SpeechInput {
 
-    override suspend fun listen(language: ListenLanguage): String? = withContext(Dispatchers.IO) {
+    override suspend fun listen(language: ListenLanguage, tagOverride: String?): String? = withContext(Dispatchers.IO) {
         val key = secure.get(SecureStore.Secret.OPENAI_API_KEY) ?: return@withContext null
         val pcm = record() ?: return@withContext null
         val wav = Wav.fromPcm16Mono(pcm, SAMPLE_RATE)
         val body = MultipartBody.Builder().setType(MultipartBody.FORM)
             .addFormDataPart("model", "whisper-1")
             .apply {
-                when (language) {
+                if (tagOverride != null) addFormDataPart("language", tagOverride.substringBefore('-')) else when (language) {
                     ListenLanguage.URDU -> addFormDataPart("language", "ur")
                     ListenLanguage.ENGLISH -> addFormDataPart("language", "en")
                     ListenLanguage.AUTO -> Unit

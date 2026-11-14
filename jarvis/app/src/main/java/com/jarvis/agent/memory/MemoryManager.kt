@@ -42,6 +42,7 @@ class MemoryManager(val dao: MemoryDao) : MemoryProvider {
     }
 
     override suspend fun onTaskFinished(userText: String, reply: String, steps: Int) {
+        if (com.jarvis.agent.core.Privacy.incognito) return
         dao.insertConversation(ConversationSummary(userText = userText.take(500), reply = reply.take(500), steps = steps))
         dao.pruneConversations(KEEP_CONVERSATIONS)
     }

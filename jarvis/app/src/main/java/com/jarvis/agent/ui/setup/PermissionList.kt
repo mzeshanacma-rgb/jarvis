@@ -45,6 +45,8 @@ fun PermissionList(items: List<PermissionItem>, onChanged: (grantedCount: Int) -
     var tick by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { tick++ }
+    // Settings pages and role requests (call screening) must be started "for result".
+    val settingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { tick++ }
     val granted = remember(tick) { items.associate { it.id to it.isGranted(context) } }
     LaunchedEffect(granted) { onChanged(granted.count { it.value }) }
 
@@ -68,7 +70,7 @@ fun PermissionList(items: List<PermissionItem>, onChanged: (grantedCount: Int) -
                             } else {
                                 item.settingsIntent?.let { f ->
                                     try {
-                                        context.startActivity(f(context))
+                                        settingsLauncher.launch(f(context))
                                     } catch (_: ActivityNotFoundException) {
                                     }
                                 }

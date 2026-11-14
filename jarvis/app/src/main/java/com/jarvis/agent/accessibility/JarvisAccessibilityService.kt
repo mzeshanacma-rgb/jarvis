@@ -144,6 +144,9 @@ class JarvisAccessibilityService : AccessibilityService() {
     /** The live node for an element id from the last snapshot, or null if it disappeared. */
     fun handle(id: Int): AccessibilityNodeInfo? = handles[id]?.takeIf { it.refresh() }
 
+    /** Package of the app on screen right now. */
+    fun currentPackage(): String? = activeRoot()?.packageName?.toString() ?: foregroundPackage.ifEmpty { null }
+
     fun focusedInput(): AccessibilityNodeInfo? = activeRoot()?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
 
     // ---------------------------------------------------------------- acting

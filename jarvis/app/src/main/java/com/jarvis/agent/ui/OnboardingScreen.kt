@@ -46,7 +46,7 @@ import com.jarvis.agent.ui.setup.PermissionList
 import com.jarvis.agent.ui.theme.JarvisBorder
 import com.jarvis.agent.ui.theme.JarvisMuted
 import com.jarvis.agent.ui.theme.JarvisOk
-import com.jarvis.agent.ui.theme.JarvisViolet
+import com.jarvis.agent.ui.theme.JarvisPrimary
 import kotlinx.coroutines.launch
 
 /** First run: four short steps — language, AI key (tested), essential permissions, ready. */
@@ -56,7 +56,7 @@ fun OnboardingScreen(onDone: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(20.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 12.dp, bottom = 20.dp)) {
             repeat(4) { i ->
-                Box(Modifier.weight(1f).height(4.dp).clip(CircleShape).background(if (i <= step) JarvisViolet else JarvisBorder))
+                Box(Modifier.weight(1f).height(4.dp).clip(CircleShape).background(if (i <= step) JarvisPrimary else JarvisBorder))
             }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {

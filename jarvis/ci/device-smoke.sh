@@ -53,6 +53,16 @@ shot 07-settings
 tap_text "Abilities" && shot 08-abilities
 start --ez demo_skip_onboarding true --ei demo_tab 0 --ez demo_urdu true
 shot 09-home-roman-urdu
+start --ez demo_skip_onboarding true --ez demo_urdu false --es demo_tool MEETING
+shot 10-meeting
+start --ez demo_skip_onboarding true --es demo_tool TRANSLATE
+shot 11-translate
+start --ez demo_skip_onboarding true --es demo_tool EXPENSES
+shot 12-expenses
+start --ez demo_skip_onboarding true --es demo_tool DRIVING
+shot 13-driving
+start --ez demo_skip_onboarding true --ei demo_tab 2
+tap_text "Privacy" >/dev/null 2>&1; adb shell input swipe 160 500 160 150 300; shot 14-settings-privacy
 
 # Fail on any crash of our app
 adb logcat -d > "$OUT/logcat.txt"

@@ -25,6 +25,7 @@ class SecureStore(context: Context) {
         GEMINI_API_KEY("gemini"),
         GROQ_API_KEY("groq"),
         OPENROUTER_API_KEY("openrouter"),
+        HOME_ASSISTANT_TOKEN("home_assistant"),
     }
 
     private val sp = context.getSharedPreferences("jarvis_secure", Context.MODE_PRIVATE)

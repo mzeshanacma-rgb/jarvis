@@ -61,25 +61,25 @@ class ConfirmActivity : FragmentActivity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(pad, pad * 2, pad, pad)
-            setBackgroundColor(Color.parseColor("#0B1320"))
+            setBackgroundColor(Color.parseColor("#F0F2F5"))
         }
         root.addView(TextView(this).apply {
             text = if (high) "⚠ HIGH RISK — fingerprint/PIN zaroori" else "Tasdeeq karein (confirm)"
-            setTextColor(Color.parseColor(if (high) "#EF4444" else "#F59E0B"))
+            setTextColor(Color.parseColor(if (high) "#E41E3F" else "#B7791F"))
             textSize = 18f
             setTypeface(typeface, Typeface.BOLD)
         })
         root.addView(TextView(this).apply {
             text = req.summary
-            setTextColor(Color.WHITE)
+            setTextColor(Color.parseColor("#050505"))
             textSize = 20f
             setPadding(0, pad, 0, pad / 2)
         })
         if (req.details.isNotBlank()) {
             root.addView(TextView(this).apply {
                 text = req.details
-                setTextColor(Color.parseColor("#E6EDF7"))
-                setBackgroundColor(Color.parseColor("#14213A"))
+                setTextColor(Color.parseColor("#050505"))
+                setBackgroundColor(Color.WHITE)
                 textSize = 16f
                 setPadding(pad / 2, pad / 2, pad / 2, pad / 2)
                 setTextIsSelectable(true)
@@ -87,7 +87,7 @@ class ConfirmActivity : FragmentActivity() {
         }
         root.addView(TextView(this).apply {
             text = "Tool: ${req.toolName}" + if (req.level == RiskLevel.MEDIUM) "\nAap \"haan\" ya \"nahi\" bol bhi sakte hain." else ""
-            setTextColor(Color.parseColor("#94A3B8"))
+            setTextColor(Color.parseColor("#65676B"))
             textSize = 13f
             setPadding(0, pad / 2, 0, pad)
         })
@@ -105,7 +105,7 @@ class ConfirmActivity : FragmentActivity() {
         })
         root.addView(buttons, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         return ScrollView(this).apply {
-            setBackgroundColor(Color.parseColor("#0B1320"))
+            setBackgroundColor(Color.parseColor("#F0F2F5"))
             addView(root)
         }
     }

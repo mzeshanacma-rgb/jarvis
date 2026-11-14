@@ -100,12 +100,12 @@ class FloatingBubble(
             com.jarvis.agent.core.AgentPhase.THINKING, com.jarvis.agent.core.AgentPhase.ACTING -> 0xFFF59E0B.toInt()
             com.jarvis.agent.core.AgentPhase.SPEAKING -> 0xFF8B5CF6.toInt()
             com.jarvis.agent.core.AgentPhase.WAITING_CONFIRMATION -> 0xFFEF4444.toInt()
-            else -> 0xFF22D3EE.toInt()
+            else -> 0xFFFFFFFF.toInt()
         }
         v.post {
             v.background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(0xE60B1320.toInt())
+                setColor(0xFF1877F2.toInt())
                 setStroke(dp(4), color)
             }
             v.contentDescription = "Jarvis: ${phase.name.lowercase()}"

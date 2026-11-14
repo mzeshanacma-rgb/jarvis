@@ -28,15 +28,15 @@ class VoiceIO(
     @Volatile var isSpeaking: Boolean = false
         private set
 
-    suspend fun listen(language: ListenLanguage = prefs.listenLanguage, beep: Boolean = true): String? {
+    suspend fun listen(language: ListenLanguage = prefs.listenLanguage, beep: Boolean = true, tagOverride: String? = null): String? {
         val guard = micGuard
         guard?.releaseMic()
         try {
             JarvisRuntime.phase(AgentPhase.LISTENING)
             if (beep) beep()
             val text = when (prefs.sttEngine) {
-                SttEngine.WHISPER -> whisperStt.listen(language) ?: androidStt.listen(language)
-                SttEngine.ANDROID -> androidStt.listen(language)
+                SttEngine.WHISPER -> whisperStt.listen(language, tagOverride) ?: androidStt.listen(language, tagOverride)
+                SttEngine.ANDROID -> androidStt.listen(language, tagOverride)
             }
             return text?.trim()?.ifEmpty { null }
         } finally {
@@ -56,6 +56,15 @@ class VoiceIO(
                 isSpeaking = false
                 JarvisRuntime.phase(previous)
             }
+        }
+    }
+
+    /** Speaks in a given language, e.g. a translation. */
+    suspend fun speakIn(text: String, locale: java.util.Locale) {
+        if (text.isBlank()) return
+        speakLock.withLock {
+            isSpeaking = true
+            try { tts.speakLocale(text, locale) } finally { isSpeaking = false }
         }
     }
 

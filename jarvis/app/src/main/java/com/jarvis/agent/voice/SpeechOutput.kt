@@ -32,6 +32,9 @@ interface SpeechOutput {
 
     /** Stops speech immediately (barge-in / kill switch). */
     fun stop()
+
+    /** Speaks in a specific language (translation). Default: best effort with the normal voice. */
+    suspend fun speakLocale(text: String, locale: Locale) = speak(text, SpokenLanguage.ENGLISH)
 }
 
 private val speechAttributes: AudioAttributes = AudioAttributes.Builder()
@@ -71,6 +74,14 @@ class AndroidTts(context: Context) : SpeechOutput {
         val ok = withTimeoutOrNull(5000) { ready.await() } ?: false
         if (!ok) return
         tts.language = localeFor(language)
+        for (chunk in chunks(text)) speakChunk(chunk)
+    }
+
+    override suspend fun speakLocale(text: String, locale: Locale) {
+        if (text.isBlank()) return
+        val ok = withTimeoutOrNull(5000) { ready.await() } ?: false
+        if (!ok) return
+        tts.language = if (tts.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE) locale else Locale.US
         for (chunk in chunks(text)) speakChunk(chunk)
     }
 
@@ -191,4 +202,8 @@ class SwitchingSpeechOutput(
         android.stop()
         eleven.stop()
     }
+
+    // ElevenLabs' multilingual voice detects the language itself.
+    override suspend fun speakLocale(text: String, locale: Locale) =
+        if (prefs.ttsEngine == TtsEngine.ELEVENLABS) eleven.speak(text, SpokenLanguage.ENGLISH) else android.speakLocale(text, locale)
 }

@@ -40,6 +40,7 @@ class ReadNotificationsTool : BaseTool(
         val app = input.str("app")?.lowercase()
         val fmt = SimpleDateFormat("HH:mm", Locale.ENGLISH)
         val list = NotificationStore.list()
+            .filter { !com.jarvis.agent.core.Privacy.isPrivate(it.packageName) }
             .filter { app == null || it.appLabel.lowercase().contains(app) || it.packageName.contains(app) }
             .take((input.int("limit") ?: 10).coerceIn(1, 30))
         if (list.isEmpty()) return ToolResult.ok("No notifications.")

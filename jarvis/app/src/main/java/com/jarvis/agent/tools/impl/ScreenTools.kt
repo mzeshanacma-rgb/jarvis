@@ -46,6 +46,8 @@ internal object Ui {
                 ).acquire(10_000L)
             }
         }
+        val fg = service()?.currentPackage()
+        if (com.jarvis.agent.core.Privacy.isPrivate(fg)) return ToolResult.error(com.jarvis.agent.core.Privacy.BLOCKED_MESSAGE)
         val km = context.getSystemService(KeyguardManager::class.java)
         if (km?.isKeyguardLocked == true) {
             return ToolResult.error("PHONE_LOCKED: use hand_off_to_user and ask the user to unlock the phone, then continue.")

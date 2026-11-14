@@ -201,6 +201,12 @@ private fun MainSettings(open: (SettingsPage) -> Unit) {
             }
         }
 
+        SectionTitle(tr("Calls & modes", "Calls aur modes"))
+        CallsAndModes()
+
+        SectionTitle(tr("Privacy", "Raazdari"))
+        PrivacySettings()
+
         SectionTitle(tr("More", "Mazeed"))
         NavRow(tr("Abilities (permissions)", "Salahiyatein (permissions)"), tr("What Jarvis is allowed to do", "Jarvis kya kya kar sakta hai")) { open(SettingsPage.ABILITIES) }
         NavRow(tr("Memory & routines", "Yaaddasht aur routines"), tr("What Jarvis remembers, scheduled tasks", "Jarvis ko kya yaad hai, scheduled kaam")) { open(SettingsPage.MEMORY) }
@@ -216,7 +222,7 @@ private fun MainSettings(open: (SettingsPage) -> Unit) {
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
-        Text("Jarvis 0.7", color = JarvisMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 24.dp))
+        Text("Jarvis 0.8", color = JarvisMuted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 24.dp))
     }
 }
 
@@ -244,6 +250,7 @@ private fun AdvancedSettings() {
                 SavedField("OpenAI key (Whisper)", isSet = secure.has(Secret.OPENAI_API_KEY), secret = true, key = "oa_$refresh") { secure.put(Secret.OPENAI_API_KEY, it); refresh++ }
             }
         }
+        SmartHomeSettings()
         GlassCard {
             Text(tr("Claude (when selected)", "Claude (jab chuna ho)"), style = MaterialTheme.typography.titleMedium)
             SavedField(tr("API base URL or your proxy", "API base URL ya apna proxy"), initial = prefs.apiBaseUrl, key = "base") { prefs.apiBaseUrl = it }
@@ -311,4 +318,104 @@ fun SavedField(
             }
         },
     )
+}
+
+@Composable
+private fun CallsAndModes() {
+    val prefs = JarvisApp.graph.prefs
+    var announce by remember { mutableStateOf(prefs.announceCalls) }
+    var busy by remember { mutableStateOf(prefs.busyMode) }
+    var busySms by remember { mutableStateOf(prefs.busyAutoSms) }
+    var unknown by remember { mutableStateOf(prefs.silenceUnknownCallers) }
+    GlassCard {
+        Toggle(tr("Say who is calling", "Batayein kaun call kar raha hai"), announce) { announce = it; prefs.announceCalls = it }
+        Toggle(tr("Busy mode: silence calls (meetings)", "Busy mode: calls khamosh (meetings)"), busy) { busy = it; prefs.busyMode = it }
+        Toggle(tr("…and text known callers \"will call back\"", "…aur contacts ko \"baad mein call karunga\" SMS"), busySms) { busySms = it; prefs.busyAutoSms = it }
+        Toggle(tr("Silence unknown numbers", "Unknown numbers khamosh"), unknown) { unknown = it; prefs.silenceUnknownCallers = it }
+        Text(
+            tr("Needs the \"Call assistant\" ability (Android 10+). Android does not let apps listen to or answer the call itself.",
+                "\"Call assistant\" salahiyat chahiye (Android 10+). Android apps ko call ki awaaz sunne ya uthane nahi deta."),
+            color = JarvisMuted, style = MaterialTheme.typography.bodySmall,
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PrivacySettings() {
+    val context = LocalContext.current
+    val g = JarvisApp.graph
+    val prefs = g.prefs
+    val scope = rememberCoroutineScope()
+    var incognito by remember { mutableStateOf(prefs.incognito) }
+    var lock by remember { mutableStateOf(prefs.appLock) }
+    var privateApps by remember { mutableStateOf(prefs.privateApps) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var deleted by remember { mutableStateOf(false) }
+    GlassCard {
+        Toggle(tr("Incognito (don't keep history or memories)", "Incognito (history aur yaaddasht mehfooz na ho)"), incognito) { incognito = it; prefs.incognito = it }
+        Toggle(tr("Lock Jarvis with fingerprint", "Jarvis ko fingerprint se lock karein"), lock) { lock = it; prefs.appLock = it }
+        Text(tr("Private apps — Jarvis can never read or use them", "Private apps — Jarvis inhein kabhi parh ya chala nahi sakta"), style = MaterialTheme.typography.titleMedium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            privateApps.sorted().forEach { pkg ->
+                FilterChip(selected = true, onClick = {
+                    privateApps = privateApps - pkg; prefs.privateApps = privateApps
+                }, label = { Text(com.jarvis.agent.tools.impl.Apps.label(context, pkg) + "  ✕") })
+            }
+        }
+        SavedField(tr("Add app by name", "App ka naam likh kar add karein"), key = "private_add_${privateApps.size}") { name ->
+            com.jarvis.agent.tools.impl.Apps.find(context, name)?.let { privateApps = privateApps + it.packageName; prefs.privateApps = privateApps }
+        }
+        TextButton(onClick = {
+            val installed = com.jarvis.agent.tools.impl.Apps.launchable(context).map { it.packageName }.toSet()
+            val add = com.jarvis.agent.core.Privacy.bankingPreset.filter { it in installed }
+            privateApps = privateApps + add; prefs.privateApps = privateApps
+        }) { Text(tr("Add my banking & wallet apps", "Mere banking aur wallet apps add karein")) }
+        Text(
+            tr("Free AI plans may use your data (including screenshots) to improve their models. For sensitive work use Claude.",
+                "Free AI plans aap ka data (screenshots samet) behtari ke liye istemal kar sakte hain. Hassas kaam ke liye Claude."),
+            color = JarvisMuted, style = MaterialTheme.typography.bodySmall,
+        )
+        Button(
+            onClick = {
+                if (!confirmDelete) confirmDelete = true
+                else scope.launch { com.jarvis.agent.core.Privacy.deleteAllData(); confirmDelete = false; deleted = true }
+            },
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                when {
+                    deleted -> tr("All data deleted ✓", "Sab data delete ✓")
+                    confirmDelete -> tr("Tap again to delete everything", "Sab delete karne ke liye dobara tap")
+                    else -> tr("Delete all my data", "Mera sara data delete karein")
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SmartHomeSettings() {
+    val g = JarvisApp.graph
+    val scope = rememberCoroutineScope()
+    var refresh by remember { mutableIntStateOf(0) }
+    var result by remember { mutableStateOf<String?>(null) }
+    GlassCard {
+        Text(tr("Smart home (Home Assistant)", "Smart home (Home Assistant)"), style = MaterialTheme.typography.titleMedium)
+        Text(
+            tr("Lights, fans, AC, plugs, curtains, locks. Without Home Assistant, Jarvis can still use your vendor app (Smart Life, Google Home) by screen control.",
+                "Batti, pankha, AC, plugs, parday, locks. Home Assistant ke baghair bhi Jarvis aap ki app (Smart Life, Google Home) screen se chala sakta hai."),
+            color = JarvisMuted, style = MaterialTheme.typography.bodySmall,
+        )
+        SavedField(tr("Home Assistant URL", "Home Assistant URL"), initial = g.prefs.homeAssistantUrl, key = "ha_url") { g.prefs.homeAssistantUrl = it }
+        SavedField(tr("Long-lived access token", "Long-lived access token"), isSet = g.secure.has(Secret.HOME_ASSISTANT_TOKEN), secret = true, key = "ha_tok_$refresh") {
+            g.secure.put(Secret.HOME_ASSISTANT_TOKEN, it); refresh++
+        }
+        TextButton(onClick = {
+            result = "…"
+            scope.launch { result = runCatching { "✓ " + com.jarvis.agent.home.HomeAssistant.states().size + " devices" }.getOrElse { "✗ " + it.message } }
+        }) { Text(tr("Test", "Test")) }
+        result?.let { Text(it, color = if (it.startsWith("✓")) JarvisOk else MaterialTheme.colorScheme.error) }
+    }
 }

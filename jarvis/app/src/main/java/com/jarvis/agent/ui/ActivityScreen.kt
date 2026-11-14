@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.jarvis.agent.JarvisApp
 import com.jarvis.agent.log.ActionLogEntry
 import com.jarvis.agent.ui.components.GlassCard
-import com.jarvis.agent.ui.theme.JarvisCyan
+import com.jarvis.agent.ui.theme.JarvisAccent
 import com.jarvis.agent.ui.theme.JarvisDanger
 import com.jarvis.agent.ui.theme.JarvisMuted
 import com.jarvis.agent.ui.theme.JarvisOk
@@ -104,7 +104,7 @@ fun ActivityScreen() {
                         Text(fmt.format(Date(t.time)), color = JarvisMuted, style = MaterialTheme.typography.bodySmall)
                     }
                     for (s in t.steps) StepRow(s)
-                    t.reply?.let { Text("→ $it", color = JarvisCyan, style = MaterialTheme.typography.bodyMedium) }
+                    t.reply?.let { Text("→ $it", color = JarvisAccent, style = MaterialTheme.typography.bodyMedium) }
                 }
             }
         }
@@ -129,6 +129,6 @@ private fun StepRow(e: ActionLogEntry) {
     }
     Row {
         Text(dot, color = color, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
-        Text(label, color = if (e.kind == "TOOL") Color.White.copy(alpha = 0.85f) else color, style = MaterialTheme.typography.bodyMedium)
+        Text(label, color = if (e.kind == "TOOL") com.jarvis.agent.ui.theme.JarvisText else color, style = MaterialTheme.typography.bodyMedium)
     }
 }

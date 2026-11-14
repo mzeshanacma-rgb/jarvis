@@ -53,9 +53,11 @@ class AppGraph(val context: Context) {
         RoutingLlmClient(prefs, ClaudeClient(http, prefs, secure), OpenAiCompatClient(http, prefs, secure))
     }
     val tools: ToolRegistry by lazy { ToolCatalog.build() }
+    val oneShot by lazy { com.jarvis.agent.brain.OneShot(claude) }
     val confirmer by lazy { AndroidConfirmer(context, voice) }
 
     val memoryDb: MemoryDatabase by lazy { MemoryDatabase.create(context) }
+    val expenseDb by lazy { com.jarvis.agent.expenses.ExpenseDatabase.create(context) }
     val memoryManager: MemoryManager by lazy { MemoryManager(memoryDb.dao()) }
     val routineScheduler: RoutineScheduler by lazy { RoutineScheduler(context) { memoryDb.dao() } }
 

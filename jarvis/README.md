@@ -11,6 +11,35 @@ line** bol kar batata hai ke kya hua.
 
 ---
 
+## Naya kya hai (0.8)
+
+- **Naya roshan design:** WhatsApp / Facebook jaisa saaf design — halka background, safed cards, gehre parhne layak alfaaz,
+  neela primary rang, WhatsApp-hara accent. (Purana kaala design hata diya.)
+- **Meeting recorder:** 60 minute tak record → Gemini se khulasa, faislay aur action items → ek tap se reminders.
+- **Fori tarjuma:** 10 zabanein (Urdu, English, Arabic, Punjabi, Hindi, Chinese, Turkish, Persian, French, Spanish) —
+  har shakhs apna button dabaye aur bole.
+- **Kharche aur receipts:** receipt ki photo → raqam, dukaan, category khud parhi jaati hai; mahine ka hisaab; CSV export;
+  awaaz se "1500 ka petrol" bhi.
+- **Driving mode:** naye messages parh kar sunaye, calls khamosh, ikhtiyari "main drive kar raha hoon" auto-reply.
+- **Call assistant (Android 10+):** kaun call kar raha hai bata dena, busy/meeting mein calls khamosh + contacts ko
+  "baad mein call karunga" SMS (ikhtiyari), unknown numbers khamosh. Android kisi app ko call ki awaaz sunne/uthane nahi deta.
+- **Smart home:** Home Assistant ke zariye batti, pankha, AC, plugs, parday, locks (locks/garage ke liye fingerprint).
+  Home Assistant na ho to Jarvis Smart Life / Google Home app screen se chala sakta hai.
+- **Raazdari:** private apps (Jarvis kabhi na parhe/chalaye; banking apps ek tap mein), incognito, fingerprint app lock,
+  "mera sara data delete karein".
+- **Release signing:** CI ab R8 release build banata hai; neeche diye secrets daalne par signed `jarvis-release.apk` bhi.
+- **Phone par jaanch:** har push par CI ek asli Android 14 emulator par app chala kar har screen ka screenshot leta hai
+  aur crash par fail hota hai. Screenshots release page par.
+
+### Release signing (apni private key)
+
+1. Apne computer par: `keytool -genkeypair -keystore jarvis-release.jks -alias jarvis -keyalg RSA -keysize 2048 -validity 10000`
+2. `base64 -w0 jarvis-release.jks` ka output copy karein.
+3. GitHub → repo → Settings → Secrets and variables → Actions → New secret:
+   `RELEASE_KEYSTORE_B64` = woh base64, `RELEASE_KEYSTORE_PASSWORD` = aap ka password.
+4. Agla push `jarvis-release.apk` release page par daal dega. Pehli dafa debug se release par jaate waqt purani app uninstall karein.
+   `.jks` file aur password kabhi kisi ko na dein aur repo mein commit na karein.
+
 ## Naya kya hai (0.7 — dobara design)
 
 - **Naya design:** 3 tabs (Home, Sargarmi, Settings), chat jaisa Home, animated mic orb, English / Roman Urdu app.

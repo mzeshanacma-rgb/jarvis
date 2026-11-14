@@ -80,10 +80,15 @@ object OpenAiConverter {
         val out = mutableListOf<JsonElement>()
         val images_ = mutableListOf<Pair<String, String>>() // tool_use_id to data URI
         val texts = mutableListOf<String>()
+        val userImages = mutableListOf<String>() // images the user attached directly (receipts, photos)
         for (b in content as? JsonArray ?: JsonArray(emptyList())) {
             val block = b as? JsonObject ?: continue
             when (block.str("type")) {
                 "text" -> block.str("text")?.let { texts += it }
+                "image" -> if (images) {
+                    val src = block.obj("source")
+                    userImages += "data:${src?.str("media_type") ?: "image/jpeg"};base64,${src?.str("data").orEmpty()}"
+                }
                 "tool_result" -> {
                     val parts = (block["content"] as? JsonArray)?.mapNotNull { it as? JsonObject }
                         ?: listOfNotNull((block["content"] as? JsonPrimitive)?.let { buildJsonObject { put("type", "text"); put("text", it.content) } })
@@ -117,7 +122,13 @@ object OpenAiConverter {
                 ),
             )
         }
-        if (texts.isNotEmpty()) out += msg("user", JsonPrimitive(texts.joinToString("\n\n")))
+        if (userImages.isNotEmpty()) {
+            val parts = texts.map { t -> buildJsonObject { put("type", "text"); put("text", t) } } +
+                userImages.map { uri -> buildJsonObject { put("type", "image_url"); putJsonObject("image_url") { put("url", uri) } } }
+            out += msg("user", JsonArray(parts))
+        } else if (texts.isNotEmpty()) {
+            out += msg("user", JsonPrimitive(texts.joinToString("\n\n")))
+        }
         return out
     }
 

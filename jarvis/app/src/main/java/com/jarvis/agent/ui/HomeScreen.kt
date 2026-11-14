@@ -16,6 +16,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Summarize
@@ -62,7 +66,7 @@ import com.jarvis.agent.ui.theme.JarvisWarn
 import java.util.Calendar
 
 @Composable
-fun HomeScreen(openSettings: () -> Unit) {
+fun HomeScreen(openSettings: () -> Unit, openTool: (ToolPage) -> Unit = {}) {
     val context = LocalContext.current
     val graph = JarvisApp.graph
     val state by JarvisRuntime.state.collectAsStateWithLifecycle()
@@ -153,6 +157,12 @@ fun HomeScreen(openSettings: () -> Unit) {
             item { Quick(Icons.Filled.EditNote, tr("Dictate message", "Message likhwayein")) { talk(QuickPrompts.dictatePrefix) } }
             item { Quick(Icons.Filled.Summarize, tr("Summarize screen", "Screen ka khulasa")) { ask(QuickPrompts.summarize) } }
             item { Quick(Icons.Filled.Alarm, tr("Reminder", "Reminder")) { talk(QuickPrompts.reminderPrefix) } }
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(bottom = 6.dp)) {
+            item { Quick(Icons.Filled.RecordVoiceOver, tr("Record meeting", "Meeting record")) { openTool(ToolPage.MEETING) } }
+            item { Quick(Icons.Filled.Translate, tr("Translate", "Tarjuma")) { openTool(ToolPage.TRANSLATE) } }
+            item { Quick(Icons.Filled.ReceiptLong, tr("Expenses", "Kharche")) { openTool(ToolPage.EXPENSES) } }
+            item { Quick(Icons.Filled.DirectionsCar, tr("Driving", "Driving")) { openTool(ToolPage.DRIVING) } }
         }
 
         // Input + orb

@@ -58,6 +58,13 @@ import com.jarvis.agent.tools.impl.EnableToolsTool
 import com.jarvis.agent.tools.impl.ReadCallLogTool
 import com.jarvis.agent.tools.impl.ReadPdfPageTool
 import com.jarvis.agent.tools.impl.SetReminderTool
+import com.jarvis.agent.tools.impl.AddExpenseTool
+import com.jarvis.agent.tools.impl.SetModeTool
+import com.jarvis.agent.tools.impl.SmartHomeControlTool
+import com.jarvis.agent.tools.impl.SmartHomeDevicesTool
+import com.jarvis.agent.tools.impl.SpendingSummaryTool
+import com.jarvis.agent.tools.impl.StartMeetingRecordingTool
+import com.jarvis.agent.tools.impl.StopMeetingRecordingTool
 
 /** The single place where tools are registered. Add new tools here. */
 object ToolCatalog {
@@ -82,6 +89,9 @@ object ToolCatalog {
         // memory & routines
         RememberTool(), RecallTool(), ForgetTool(), SaveNicknameTool(),
         CreateRoutineTool(), ListRoutinesTool(), UpdateRoutineTool(), DeleteRoutineTool(),
+        // meetings, money, home, modes
+        StartMeetingRecordingTool(), StopMeetingRecordingTool(), AddExpenseTool(), SpendingSummaryTool(),
+        SmartHomeDevicesTool(), SmartHomeControlTool(), SetModeTool(),
         // web & files
         WebSearchTool(), ReadWebPageTool(), ListFilesTool(), ReadTextFileTool(), ReadPdfPageTool(), DeleteFileTool(),
     )

@@ -66,6 +66,7 @@ class LaunchAppTool : BaseTool(
     override suspend fun execute(input: JsonObject, ctx: ToolContext): ToolResult {
         val app = Apps.find(ctx.app, input.str("app").orEmpty())
             ?: return ToolResult.error("APP_NOT_FOUND: no installed app matches '${input.str("app")}'. Use list_apps.")
+        if (com.jarvis.agent.core.Privacy.isPrivate(app.packageName)) return ToolResult.error(com.jarvis.agent.core.Privacy.BLOCKED_MESSAGE)
         val intent = ctx.app.packageManager.getLaunchIntentForPackage(app.packageName)
             ?: return ToolResult.error("App ${app.label} has no launcher screen")
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)

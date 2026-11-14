@@ -42,20 +42,20 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.jarvis.agent.core.AgentPhase
 import com.jarvis.agent.ui.theme.JarvisBorder
-import com.jarvis.agent.ui.theme.JarvisCyan
+import com.jarvis.agent.ui.theme.JarvisAccent
 import com.jarvis.agent.ui.theme.JarvisDanger
 import com.jarvis.agent.ui.theme.JarvisMuted
 import com.jarvis.agent.ui.theme.JarvisOk
 import com.jarvis.agent.ui.theme.JarvisSurface
-import com.jarvis.agent.ui.theme.JarvisViolet
+import com.jarvis.agent.ui.theme.JarvisPrimary
 import com.jarvis.agent.ui.theme.JarvisWarn
 
 fun phaseColor(p: AgentPhase): Color = when (p) {
     AgentPhase.LISTENING -> JarvisOk
     AgentPhase.THINKING, AgentPhase.ACTING -> JarvisWarn
-    AgentPhase.SPEAKING -> JarvisViolet
+    AgentPhase.SPEAKING -> Color(0xFF7C3AED)
     AgentPhase.WAITING_CONFIRMATION -> JarvisDanger
-    else -> JarvisCyan
+    else -> JarvisPrimary
 }
 
 fun AgentPhase.isBusy() = this != AgentPhase.OFF && this != AgentPhase.WAITING_WAKE_WORD
@@ -89,7 +89,7 @@ fun VoiceOrb(phase: AgentPhase, size: Dp = 104.dp, onClick: () -> Unit) {
                 .size(size)
                 .scale(if (busy) pulse else 1f)
                 .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(JarvisViolet, c)))
+                .background(Brush.linearGradient(listOf(JarvisPrimary, c)))
                 .clickable(onClick = onClick),
         ) {
             Icon(
@@ -109,7 +109,7 @@ fun GlassCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, cont
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(JarvisSurface.copy(alpha = 0.92f))
+            .background(JarvisSurface)
             .border(1.dp, JarvisBorder, shape)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(16.dp),
@@ -154,12 +154,12 @@ fun ChatBubble(text: String, fromUser: Boolean, footnote: String? = null) {
             Modifier
                 .widthIn(max = 320.dp)
                 .clip(shape)
-                .background(if (fromUser) Brush.linearGradient(listOf(JarvisViolet, Color(0xFF5B8CFF))) else Brush.linearGradient(listOf(JarvisSurface, JarvisSurface)))
-                .border(if (fromUser) 0.dp else 1.dp, JarvisBorder, shape)
+                .background(if (fromUser) com.jarvis.agent.ui.theme.JarvisUserBubble else JarvisSurface)
+                .border(1.dp, if (fromUser) Color(0xFFC6EFC0) else JarvisBorder, shape)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
-            Text(text, color = Color.White, style = MaterialTheme.typography.bodyLarge)
-            footnote?.let { Text(it, color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.bodySmall) }
+            Text(text, color = com.jarvis.agent.ui.theme.JarvisText, style = MaterialTheme.typography.bodyLarge)
+            footnote?.let { Text(it, color = JarvisMuted, style = MaterialTheme.typography.bodySmall) }
         }
     }
 }

@@ -13,8 +13,8 @@ android {
         applicationId = "com.jarvis.agent"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.7.0"
+        versionCode = 8
+        versionName = "0.8.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -31,6 +31,15 @@ android {
 
     buildTypes {
         release {
+            // Signed with your private release key when CI provides it (see README, "Release signing").
+            System.getenv("JARVIS_RELEASE_STORE")?.let { store ->
+                signingConfig = signingConfigs.create("release") {
+                    storeFile = file(store)
+                    storePassword = System.getenv("JARVIS_RELEASE_PASSWORD")
+                    keyAlias = System.getenv("JARVIS_RELEASE_ALIAS") ?: "jarvis"
+                    keyPassword = System.getenv("JARVIS_RELEASE_KEY_PASSWORD") ?: System.getenv("JARVIS_RELEASE_PASSWORD")
+                }
+            }
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

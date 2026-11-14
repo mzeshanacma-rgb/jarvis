@@ -3,11 +3,14 @@ package com.jarvis.agent.ui.theme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -15,63 +18,68 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.shape.RoundedCornerShape
 
-// Brand palette: deep navy night with violet → cyan accents.
-val JarvisViolet = Color(0xFF7C5CFF)
-val JarvisCyan = Color(0xFF22D3EE)
-val JarvisBg = Color(0xFF090E1C)
-val JarvisBg2 = Color(0xFF111A33)
-val JarvisSurface = Color(0xFF151E37)
-val JarvisSurface2 = Color(0xFF1D2846)
-val JarvisBorder = Color(0xFF27324F)
-val JarvisText = Color(0xFFEAF0FF)
-val JarvisMuted = Color(0xFF8E9AC0)
-val JarvisDanger = Color(0xFFEF4444)
-val JarvisOk = Color(0xFF22C55E)
-val JarvisWarn = Color(0xFFF59E0B)
+// Light, professional palette in the style of WhatsApp / Facebook:
+// soft grey page, white cards, near-black text, blue primary, WhatsApp-green accent.
+val JarvisPrimary = Color(0xFF1877F2)   // buttons, selection, links
+val JarvisAccent = Color(0xFF00A884)    // positive / listening / "free" accents
+val JarvisBg = Color(0xFFF0F2F5)        // page background
+val JarvisBg2 = Color(0xFFF0F2F5)
+val JarvisSurface = Color(0xFFFFFFFF)   // cards
+val JarvisSurface2 = Color(0xFFE7F0FD)  // selected / tinted surfaces
+val JarvisBorder = Color(0xFFE4E6EB)
+val JarvisText = Color(0xFF050505)
+val JarvisMuted = Color(0xFF65676B)
+val JarvisDanger = Color(0xFFE41E3F)
+val JarvisOk = Color(0xFF00A884)
+val JarvisWarn = Color(0xFFB7791F)
+val JarvisUserBubble = Color(0xFFD9FDD3) // WhatsApp-style outgoing bubble
 
-val BrandGradient = Brush.linearGradient(listOf(JarvisViolet, JarvisCyan))
+val BrandGradient = Brush.linearGradient(listOf(JarvisPrimary, JarvisAccent))
 
-private val scheme = darkColorScheme(
-    primary = JarvisViolet,
+private val scheme = lightColorScheme(
+    primary = JarvisPrimary,
     onPrimary = Color.White,
-    secondary = JarvisCyan,
-    onSecondary = Color(0xFF00242B),
+    primaryContainer = JarvisSurface2,
+    onPrimaryContainer = Color(0xFF0B3D91),
+    secondary = JarvisAccent,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFD7F5EC),
+    onSecondaryContainer = Color(0xFF00513F),
     background = JarvisBg,
-    surface = JarvisSurface,
-    surfaceVariant = JarvisSurface2,
-    surfaceContainer = JarvisSurface,
     onBackground = JarvisText,
+    surface = JarvisSurface,
     onSurface = JarvisText,
+    surfaceVariant = Color(0xFFF5F6F7),
     onSurfaceVariant = JarvisMuted,
-    outline = JarvisBorder,
+    surfaceContainer = JarvisSurface,
+    surfaceContainerHigh = Color(0xFFF7F8FA),
+    outline = Color(0xFFCED0D4),
+    outlineVariant = JarvisBorder,
     error = JarvisDanger,
 )
 
 private val type = Typography(
-    headlineMedium = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-    headlineSmall = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold),
-    titleMedium = TextStyle(fontSize = 17.sp, fontWeight = FontWeight.SemiBold),
+    headlineMedium = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp, color = JarvisText),
+    headlineSmall = TextStyle(fontSize = 21.sp, fontWeight = FontWeight.Bold, color = JarvisText),
+    titleMedium = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = JarvisText),
     bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 22.sp),
     bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp),
-    bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 17.sp),
+    bodySmall = TextStyle(fontSize = 12.5.sp, lineHeight = 17.sp),
     labelLarge = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
 )
 
 private val shapes = Shapes(
-    small = RoundedCornerShape(12.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(26.dp),
+    small = RoundedCornerShape(10.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(20.dp),
 )
 
 @Composable
 fun JarvisTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = scheme, typography = type, shapes = shapes) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(listOf(JarvisBg, JarvisBg2))),
-        ) { content() }
+        CompositionLocalProvider(LocalContentColor provides JarvisText) {
+            Box(Modifier.fillMaxSize().background(JarvisBg)) { content() }
+        }
     }
 }

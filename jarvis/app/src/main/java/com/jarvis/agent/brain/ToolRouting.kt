@@ -28,6 +28,9 @@ object ToolRouting {
         "web" to setOf("web_search", "read_web_page"),
         "files" to setOf("list_files", "read_text_file", "delete_file", "read_pdf_page", "recent_photos", "view_photo", "open_camera"),
         "routines" to setOf("forget", "create_routine", "list_routines", "set_routine_enabled", "delete_routine"),
+        "meeting" to setOf("start_meeting_recording", "stop_meeting_recording", "set_mode"),
+        "expenses" to setOf("add_expense", "spending_summary"),
+        "home" to setOf("smart_home_devices", "smart_home_control"),
     )
 
     private fun kw(vararg w: String) = Regex(w.joinToString("|") { "(?<![\\p{L}])$it" }, RegexOption.IGNORE_CASE)
@@ -59,6 +62,10 @@ object ToolRouting {
             "tasveer", "summar", "فائل", "تصویر",
         ),
         "routines" to kw("routine", "every day", "har roz", "daily", "every morning", "forget", "bhool", "روزانہ"),
+        "meeting" to kw("meeting", "record", "recording", "minutes", "driving", "drive", "busy", "gaari", "مِیٹنگ", "ریکارڈ"),
+        "expenses" to kw("spent", "spend", "expense", "kharch", "kharcha", "paid", "receipt", "bill", "budget", "kitne paise", "خرچ"),
+        "home" to kw("light", "lights", "fan", "ac", "air condition", "heater", "bulb", "plug", "curtain", "lock", "garage",
+            "smart home", "batti", "pankha", "بتی", "پنکھا"),
     )
 
     /** Groups to send for this request (always includes core). */

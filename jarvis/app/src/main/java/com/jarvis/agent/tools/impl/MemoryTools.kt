@@ -35,6 +35,7 @@ class RememberTool : BaseTool(
     override suspend fun execute(input: JsonObject, ctx: ToolContext): ToolResult {
         val fact = input.str("fact").orEmpty().trim()
         if (fact.isEmpty()) return ToolResult.error("Empty fact")
+        if (com.jarvis.agent.core.Privacy.incognito) return ToolResult.error("INCOGNITO: the user turned off memory; nothing was saved.")
         if (SensitiveInputGuard.checkOutgoingText(fact) != null || secretWords.containsMatchIn(fact)) {
             return ToolResult.error("BLOCKED_SECRET: Jarvis never stores passwords, PINs, OTPs or card numbers.")
         }

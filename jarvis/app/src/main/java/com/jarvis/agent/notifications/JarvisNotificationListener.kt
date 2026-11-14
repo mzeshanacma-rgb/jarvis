@@ -66,23 +66,25 @@ class JarvisNotificationListener : NotificationListenerService() {
         if (instance === this) instance = null
     }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification) = store(sbn)
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
+        store(sbn)?.let { com.jarvis.agent.driving.DrivingMode.onPosted(this, it) }
+    }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) = NotificationStore.remove(sbn.key)
 
-    private fun store(sbn: StatusBarNotification) {
-        if (sbn.packageName == packageName) return
-        val n = sbn.notification ?: return
-        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
+    /** Stores the notification and returns it (null if ignored). */
+    private fun store(sbn: StatusBarNotification): StoredNotification? {
+        if (sbn.packageName == packageName) return null
+        val n = sbn.notification ?: return null
+        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return null
         val extras = n.extras ?: Bundle()
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = (extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: extras.getCharSequence(Notification.EXTRA_TEXT))
             ?.toString().orEmpty()
         val lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.joinToString("\n")
-        if (title.isBlank() && text.isBlank() && lines.isNullOrBlank()) return
+        if (title.isBlank() && text.isBlank() && lines.isNullOrBlank()) return null
         val reply = n.actions?.firstOrNull { a -> a.remoteInputs?.any { it.allowFreeFormInput } == true }
-        NotificationStore.add(
-            StoredNotification(
+        val stored = StoredNotification(
                 id = NotificationStore.nextId(),
                 key = sbn.key,
                 packageName = sbn.packageName,
@@ -92,8 +94,9 @@ class JarvisNotificationListener : NotificationListenerService() {
                 postTime = sbn.postTime,
                 replyAction = reply,
                 contentIntent = n.contentIntent,
-            ),
-        )
+            )
+        NotificationStore.add(stored)
+        return stored
     }
 
     fun dismiss(key: String) = cancelNotification(key)
