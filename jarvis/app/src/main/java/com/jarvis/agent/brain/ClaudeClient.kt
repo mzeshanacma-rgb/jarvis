@@ -28,18 +28,21 @@ data class ModelConfig(
     val model: String,
     val effort: String,
     val directApi: Boolean,
+    /** False for Gemini/Groq/OpenRouter (OpenAI-style providers). */
+    val isClaude: Boolean = true,
 ) {
     /**
      * Claude Sonnet 5.5 accepts `between_tools`: no hidden reasoning, text between tool calls comes back as
      * plain text, and no thinking blocks are bound to history — so we may prune old screenshots safely.
      * Other models run adaptive thinking and the history is kept strictly append-only.
      */
-    val thinkingBetweenTools: Boolean get() = model == "claude-sonnet-5-5"
+    val thinkingBetweenTools: Boolean get() = isClaude && model == "claude-sonnet-5-5"
 
     val supportsDefaultFallbacks: Boolean
-        get() = directApi && model in setOf("claude-sonnet-5-5", "claude-opus-5-5", "claude-opus-5", "claude-fable-5-1")
+        get() = isClaude && directApi && model in setOf("claude-sonnet-5-5", "claude-opus-5-5", "claude-opus-5", "claude-fable-5-1")
 
-    val canPruneHistory: Boolean get() = thinkingBetweenTools
+    /** No thinking blocks are bound to history, so old screenshots can be dropped safely. */
+    val canPruneHistory: Boolean get() = thinkingBetweenTools || !isClaude
 }
 
 object RequestFactory {
@@ -144,12 +147,12 @@ class ClaudeClient(
     private val http: OkHttpClient,
     private val prefs: Prefs,
     private val secure: SecureStore,
-) {
+) : LlmClient {
     private val json = Json { ignoreUnknownKeys = true }
 
-    fun currentConfig() = ModelConfig(model = prefs.model, effort = prefs.effort, directApi = prefs.usesDirectApi)
+    override fun currentConfig() = ModelConfig(model = prefs.model, effort = prefs.effort, directApi = prefs.usesDirectApi)
 
-    suspend fun stream(body: JsonObject, listener: StreamListener? = null): AssistantTurn {
+    override suspend fun stream(body: JsonObject, listener: StreamListener?): AssistantTurn {
         var attempt = 0
         while (true) {
             try {

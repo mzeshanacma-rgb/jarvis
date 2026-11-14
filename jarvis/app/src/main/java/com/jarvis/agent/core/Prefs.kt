@@ -2,6 +2,7 @@ package com.jarvis.agent.core
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.jarvis.agent.brain.Provider
 
 enum class SttEngine { ANDROID, WHISPER }
 enum class TtsEngine { ANDROID, ELEVENLABS }
@@ -52,9 +53,21 @@ class Prefs(context: Context) {
         get() = sp.getString("api_base", null) ?: DEFAULT_API_BASE
         set(v) = sp.edit().putString("api_base", v.trim().trimEnd('/').ifEmpty { DEFAULT_API_BASE }).apply()
 
+    /** Which AI service is used. Defaults to a free one so Jarvis works without a paid key. */
+    var provider: Provider
+        get() = enumOr(sp.getString("provider", null), Provider.GEMINI)
+        set(v) = sp.edit().putString("provider", v.name).apply()
+
+    /** Model for the *current* provider (each provider remembers its own). */
     var model: String
-        get() = sp.getString("model", null) ?: DEFAULT_MODEL
-        set(v) = sp.edit().putString("model", v.trim().ifEmpty { DEFAULT_MODEL }).apply()
+        get() = modelFor(provider)
+        set(v) = setModelFor(provider, v)
+
+    fun modelFor(p: Provider): String = sp.getString("model_${p.name}", null) ?: p.defaultModel
+
+    fun setModelFor(p: Provider, v: String) {
+        sp.edit().putString("model_${p.name}", v.trim().ifEmpty { p.defaultModel }).apply()
+    }
 
     /** Effort for the agent loop. `between_tools` thinking accepts `high` or below. */
     var effort: String
@@ -66,7 +79,7 @@ class Prefs(context: Context) {
         set(v) = sp.edit().putInt("max_steps", v.coerceIn(1, 25)).apply()
 
     var maxRequestsPerMinute: Int
-        get() = sp.getInt("rpm", 20)
+        get() = sp.getInt("rpm", 10)
         set(v) = sp.edit().putInt("rpm", v.coerceIn(1, 60)).apply()
 
     var taskTimeoutSec: Int
@@ -77,13 +90,12 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("setup_done", false)
         set(v) = sp.edit().putBoolean("setup_done", v).apply()
 
-    val usesDirectApi: Boolean get() = apiBaseUrl == DEFAULT_API_BASE
+    val usesDirectApi: Boolean get() = provider == Provider.CLAUDE && apiBaseUrl == DEFAULT_API_BASE
 
     private inline fun <reified T : Enum<T>> enumOr(name: String?, default: T): T =
         name?.let { n -> enumValues<T>().firstOrNull { it.name == n } } ?: default
 
     companion object {
         const val DEFAULT_API_BASE = "https://api.anthropic.com"
-        const val DEFAULT_MODEL = "claude-sonnet-5-5"
     }
 }

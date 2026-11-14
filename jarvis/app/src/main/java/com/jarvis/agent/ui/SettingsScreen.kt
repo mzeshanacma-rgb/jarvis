@@ -15,6 +15,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.jarvis.agent.JarvisApp
+import com.jarvis.agent.brain.Provider
 import com.jarvis.agent.core.ListenLanguage
 import com.jarvis.agent.core.SecureStore.Secret
 import com.jarvis.agent.core.SttEngine
@@ -36,13 +38,14 @@ fun SettingsScreen() {
     val secure = graph.secure
     var saved by remember { mutableStateOf(false) }
 
-    var anthropic by remember { mutableStateOf("") }
+    var provider by remember { mutableStateOf(prefs.provider) }
+    val providerKeys = remember { mutableStateMapOf<Provider, String>() }
+    val models = remember { mutableStateMapOf<Provider, String>().apply { Provider.entries.forEach { put(it, prefs.modelFor(it)) } } }
     var proxyToken by remember { mutableStateOf("") }
     var picovoice by remember { mutableStateOf("") }
     var eleven by remember { mutableStateOf("") }
     var openai by remember { mutableStateOf("") }
     var baseUrl by remember { mutableStateOf(prefs.apiBaseUrl) }
-    var model by remember { mutableStateOf(prefs.model) }
     var voiceId by remember { mutableStateOf(prefs.elevenLabsVoiceId) }
     var wake by remember { mutableStateOf(prefs.wakeWordEnabled) }
     var overlay by remember { mutableStateOf(prefs.overlayEnabled) }
@@ -63,20 +66,41 @@ fun SettingsScreen() {
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
 
-        Section("API keys (Android Keystore mein encrypted)")
-        KeyField("Claude API key", secure.has(Secret.ANTHROPIC_API_KEY), anthropic) { anthropic = it }
+        Section("AI service (dimaagh)")
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Provider.entries.forEach { p ->
+                FilterChip(selected = provider == p, onClick = { provider = p }, label = { Text(if (p.free) p.name.lowercase() + " ✓free" else p.name.lowercase()) })
+            }
+        }
+        Text(provider.label, fontWeight = FontWeight.SemiBold)
+        Text(provider.keyHelp, style = MaterialTheme.typography.bodySmall)
+        KeyField("${provider.label} API key", secure.has(provider.secret), providerKeys[provider].orEmpty()) { providerKeys[provider] = it }
+        OutlinedTextField(
+            models[provider].orEmpty(), { models[provider] = it },
+            label = { Text("Model") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+        )
+        if (provider.free) {
+            Text(
+                "Free plans ki rate limit kam hoti hai aur free tier par aap ka data provider training ke liye istemal kar sakta hai " +
+                    "(screenshots samet). Hassas kaam ke liye baad mein Claude istemal karein.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        Section("Doosri keys (Android Keystore mein encrypted)")
         KeyField("Picovoice AccessKey (wake word)", secure.has(Secret.PICOVOICE_ACCESS_KEY), picovoice) { picovoice = it }
         KeyField("ElevenLabs API key (optional)", secure.has(Secret.ELEVENLABS_API_KEY), eleven) { eleven = it }
         KeyField("OpenAI key for Whisper STT (optional)", secure.has(Secret.OPENAI_API_KEY), openai) { openai = it }
 
-        Section("Claude")
-        OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text("API base URL ya apna proxy") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-        KeyField("Proxy token (sirf proxy ke liye)", secure.has(Secret.PROXY_TOKEN), proxyToken) { proxyToken = it }
-        OutlinedTextField(model, { model = it }, label = { Text("Model") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-        Text("Effort (kam = tez jawab)")
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            listOf("low", "medium", "high").forEach { e ->
-                FilterChip(selected = effort == e, onClick = { effort = e }, label = { Text(e) })
+        if (provider == Provider.CLAUDE) {
+            Section("Claude (proxy aur effort)")
+            OutlinedTextField(baseUrl, { baseUrl = it }, label = { Text("API base URL ya apna proxy") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            KeyField("Proxy token (sirf proxy ke liye)", secure.has(Secret.PROXY_TOKEN), proxyToken) { proxyToken = it }
+            Text("Effort (kam = tez jawab)")
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("low", "medium", "high").forEach { e ->
+                    FilterChip(selected = effort == e, onClick = { effort = e }, label = { Text(e) })
+                }
             }
         }
 
@@ -109,14 +133,16 @@ fun SettingsScreen() {
 
         Button(
             onClick = {
-                if (anthropic.isNotBlank()) secure.put(Secret.ANTHROPIC_API_KEY, anthropic)
+                providerKeys.forEach { (p, v) -> if (v.isNotBlank()) secure.put(p.secret, v) }
+                providerKeys.clear()
+                prefs.provider = provider
+                models.forEach { (p, m) -> prefs.setModelFor(p, m) }
                 if (proxyToken.isNotBlank()) secure.put(Secret.PROXY_TOKEN, proxyToken)
                 if (picovoice.isNotBlank()) secure.put(Secret.PICOVOICE_ACCESS_KEY, picovoice)
                 if (eleven.isNotBlank()) secure.put(Secret.ELEVENLABS_API_KEY, eleven)
                 if (openai.isNotBlank()) secure.put(Secret.OPENAI_API_KEY, openai)
-                anthropic = ""; proxyToken = ""; picovoice = ""; eleven = ""; openai = ""
+                proxyToken = ""; picovoice = ""; eleven = ""; openai = ""
                 prefs.apiBaseUrl = baseUrl
-                prefs.model = model
                 prefs.effort = effort
                 maxSteps.toIntOrNull()?.let { prefs.maxSteps = it }
                 rpm.toIntOrNull()?.let { prefs.maxRequestsPerMinute = it }

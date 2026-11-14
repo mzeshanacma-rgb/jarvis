@@ -3,6 +3,9 @@ package com.jarvis.agent.core
 import android.content.Context
 import com.jarvis.agent.brain.AgentLoop
 import com.jarvis.agent.brain.ClaudeClient
+import com.jarvis.agent.brain.LlmClient
+import com.jarvis.agent.brain.OpenAiCompatClient
+import com.jarvis.agent.brain.RoutingLlmClient
 import com.jarvis.agent.brain.MemoryProvider
 import com.jarvis.agent.brain.NoMemory
 import com.jarvis.agent.brain.RateLimiter
@@ -46,7 +49,9 @@ class AppGraph(val context: Context) {
     }
 
     val actionLog: ActionLogger by lazy { ActionLogger(ActionLogDatabase.create(context).dao(), appScope) }
-    val claude: ClaudeClient by lazy { ClaudeClient(http, prefs, secure) }
+    val claude: LlmClient by lazy {
+        RoutingLlmClient(prefs, ClaudeClient(http, prefs, secure), OpenAiCompatClient(http, prefs, secure))
+    }
     val tools: ToolRegistry by lazy { ToolCatalog.build() }
     val confirmer by lazy { AndroidConfirmer(context, voice) }
 

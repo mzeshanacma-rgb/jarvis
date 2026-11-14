@@ -56,8 +56,10 @@ fun HomeScreen() {
         Text("Jarvis", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         val graph = com.jarvis.agent.JarvisApp.graph
         val warnings = buildList {
-            if (graph.prefs.usesDirectApi && !graph.secure.has(com.jarvis.agent.core.SecureStore.Secret.ANTHROPIC_API_KEY)) {
-                add("Claude API key nahi hai — Settings mein daalein.")
+            val p = graph.prefs.provider
+            val proxied = p == com.jarvis.agent.brain.Provider.CLAUDE && !graph.prefs.usesDirectApi
+            if (!proxied && !graph.secure.has(p.secret)) {
+                add("${p.label} ki API key nahi hai — Settings mein daalein.")
             }
             if (!com.jarvis.agent.ui.setup.PermissionCatalog.isAccessibilityEnabled(context)) {
                 add("Accessibility band hai — Jarvis apps nahi chala sakta aur volume kill switch kaam nahi karega.")

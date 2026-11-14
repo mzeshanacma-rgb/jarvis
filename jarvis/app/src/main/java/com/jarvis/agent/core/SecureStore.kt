@@ -22,6 +22,9 @@ class SecureStore(context: Context) {
         PICOVOICE_ACCESS_KEY("picovoice"),
         ELEVENLABS_API_KEY("elevenlabs"),
         OPENAI_API_KEY("openai_whisper"),
+        GEMINI_API_KEY("gemini"),
+        GROQ_API_KEY("groq"),
+        OPENROUTER_API_KEY("openrouter"),
     }
 
     private val sp = context.getSharedPreferences("jarvis_secure", Context.MODE_PRIVATE)

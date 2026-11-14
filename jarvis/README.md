@@ -30,11 +30,27 @@ Git history mein har milestone ka alag commit hai.
 
 - Android Studio (Ladybug ya naya) aur JDK 17
 - Android 8.0+ phone (screenshot/vision ke liye Android 11+)
-- **Claude API key** — [console.anthropic.com](https://console.anthropic.com) (ya apna proxy, neeche dekhein)
+- **Ek AI key** — shuru mein **muft**: [Gemini](https://aistudio.google.com/apikey) (sab se behtar free option: Urdu + screenshots),
+  [Groq](https://console.groq.com/keys) ya [OpenRouter](https://openrouter.ai/keys). Baad mein Claude: [console.anthropic.com](https://console.anthropic.com) (ya apna proxy, section 7)
 - **Picovoice AccessKey** (free) — [console.picovoice.ai](https://console.picovoice.ai) — wake word ke liye
 - Optional: **ElevenLabs** key (behtar awaaz), **OpenAI** key (Whisper STT, Urdu ke liye behtareen)
 
-Model: `claude-sonnet-5-5` (Settings mein badal sakte hain).
+### AI service chunna (Settings → "AI service")
+
+| Service | Kharcha | Kaisa hai |
+|---------|---------|-----------|
+| **Gemini** (default) | free tier | Urdu achhi, screenshots dekh sakta hai, tool use theek |
+| **Groq** | free tier | bohot tez, screenshots nahi (Jarvis `read_screen` se kaam chalata hai) |
+| **OpenRouter** | `:free` models muft | model ka naam khud badal sakte hain |
+| **Claude** | paid | sab se behtar tool-use/safety; `claude-sonnet-5-5` |
+
+Switch karna bas ek chip tap karna hai — baqi sab (safety, confirmation, memory) wahi rehta hai. Har service ka apna model naam
+field hai; free models ke naam kabhi kabhi badalte hain, to error aaye to us service ki site par naya naam dekh kar yahan likh dein.
+
+> **Free plans ke liye khabardar:** rate limit kam hoti hai (isi liye default 10 requests/minute hai; "free limit khatam" aaye to
+> ek minute ruk jayein), free models Claude se kamzor hote hain (kabhi kabhi ghalat tap ya adhoora kaam), aur free tier par provider
+> aap ka data (screenshots samet) training ke liye istemal kar sakta hai. Hifazati rules (confirmation, secrets, kill switch) code mein
+> hain aur har model par yaksan chalte hain, lekin bank/hassas kaam ke liye Claude behtar rahega.
 
 ## 3. Build aur install
 
@@ -76,7 +92,7 @@ App kholte hi **Permissions** screen aati hai. Har ijazat ke saath likha hai ke 
 
 > **Android 13+ (sideloaded APK):** Accessibility ka option grey ho to: *Settings → Apps → Jarvis → ⋮ → Allow restricted settings*, phir Accessibility on karein.
 
-Phir **Settings** tab mein Claude API key aur Picovoice AccessKey daalein → **Save** → Home par "Jarvis shuru karein".
+Phir **Settings** tab mein AI service chunein (default Gemini), us ki free key aur Picovoice AccessKey daalein → **Save** → Home par "Jarvis shuru karein".
 
 ---
 
