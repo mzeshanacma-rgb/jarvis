@@ -81,6 +81,10 @@ export function createApp(cfg) {
 
   const app = express();
   app.disable('x-powered-by');
+  // Optional request log (method, path, status) for debugging; never logs bodies or query strings.
+  if (process.env.LOG_REQUESTS === '1') {
+    app.use((req, res, next) => { res.on('finish', () => console.log(`${req.method} ${req.path} ${res.statusCode} ${req.get('user-agent')?.includes('AssignmentReviewAndroid') ? 'android-app' : ''}`)); next(); });
+  }
   if (cfg.behindHttps) app.set('trust proxy', 1);
 
   // Security headers

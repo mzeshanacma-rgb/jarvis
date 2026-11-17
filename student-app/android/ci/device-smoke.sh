@@ -8,7 +8,7 @@ APP_URL=http://10.0.2.2:3000
 mkdir -p "$OUT"
 
 # 1. Web server (demo AI, fresh data)
-DATA_DIR=$(mktemp -d) PORT=3000 PUBLIC_URL=$APP_URL AI_MODE=demo node --no-warnings student-app/src/server.js > "$OUT/server.log" 2>&1 &
+LOG_REQUESTS=1 DATA_DIR=$(mktemp -d) PORT=3000 PUBLIC_URL=$APP_URL AI_MODE=demo node --no-warnings student-app/src/server.js > "$OUT/server.log" 2>&1 &
 SERVER_PID=$!
 for i in $(seq 1 30); do curl -sf $HOST_URL/api/health >/dev/null && break; sleep 1; done
 curl -sf $HOST_URL/api/health || { echo "server did not start"; cat "$OUT/server.log"; exit 1; }
@@ -45,7 +45,12 @@ PY
   adb shell input tap $xy; echo "tapped $1 at $xy"
 }
 type_text() { adb shell input text "$(printf '%s' "$1" | sed 's/ /%s/g')"; }
-fail() { echo "FAIL: $1"; dump; cp /tmp/ui.xml "$OUT/ui-at-failure.xml"; adb logcat -d > "$OUT/logcat.txt"; kill $SERVER_PID; exit 1; }
+fail() {
+  echo "FAIL: $1"; dump; cp /tmp/ui.xml "$OUT/ui-at-failure.xml"; adb logcat -d > "$OUT/logcat.txt"
+  echo "--- on-screen text ---"; python3 -c "import xml.etree.ElementTree as E;[print(repr(n.get('text')),n.get('class'),n.get('bounds')) for n in E.parse('/tmp/ui.xml').getroot().iter('node') if n.get('text') or 'WebView' in (n.get('class') or '')]"
+  echo "--- server requests ---"; tail -40 "$OUT/server.log"
+  echo "--- app log ---"; grep -E "chromium|WebView|AndroidRuntime|$PKG" "$OUT/logcat.txt" | tail -40
+  kill $SERVER_PID; exit 1; }
 
 # 2. First launch: native "Connect to your school" screen
 adb shell pm clear $PKG >/dev/null
@@ -66,7 +71,8 @@ type_text "$APP_URL"
 tap_text "Connect" 1 || fail "connect button not found"
 sleep 8
 shot 03-web-setup
-has_text "Set up your school" || fail "web app did not load in the WebView"
+grep -q "GET /api/setup 200 android-app" "$OUT/server.log" || fail "web app did not load in the WebView"
+has_text "Set up your school" || echo "note: WebView text not visible to uiautomator (checked via server log instead)"
 
 # 4. Create the school on the server, then sign in through the app
 curl -sf -X POST $HOST_URL/api/setup -H 'content-type: application/json' -H 'x-requested-with: app' \
@@ -74,14 +80,15 @@ curl -sf -X POST $HOST_URL/api/setup -H 'content-type: application/json' -H 'x-r
 adb shell am force-stop $PKG
 adb shell am start -W -n $PKG/.MainActivity >/dev/null
 sleep 6
-has_text "Sign in" || fail "sign-in page not shown after restart (server address not remembered?)"
+grep -c "GET /api/me 401 android-app" "$OUT/server.log" | grep -qv '^0$' || fail "app did not reopen the saved server"
 shot 04-sign-in 1
 tap_text "Username" && type_text "admin"
 tap_text "Password" && type_text "AdminPass2026"
 adb shell input keyevent 66
 sleep 6
 shot 05-two-step-sign-in
-has_text "two-step" || fail "sign-in did not reach the two-step screen (cookies?)"
+grep -q "POST /api/login 200 android-app" "$OUT/server.log" || fail "sign-in through the app failed"
+grep -q "GET /api/mfa/setup 200 android-app" "$OUT/server.log" || fail "session cookie not kept after sign-in"
 
 # 5. Back button and app restart keep working
 adb shell input keyevent 4
