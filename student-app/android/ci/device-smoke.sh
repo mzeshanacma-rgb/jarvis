@@ -24,17 +24,18 @@ shot() { sleep "${2:-4}"; adb exec-out screencap -p > "$OUT/$1.png"; echo "shot 
 dump() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; adb pull /sdcard/ui.xml /tmp/ui.xml >/dev/null 2>&1; }
 has_text() { dump; grep -qi -- "$1" /tmp/ui.xml; }
 
-# Tap the first on-screen element whose text, description or hint contains $1.
+# Tap the first on-screen element whose text, description or hint contains $1 (or equals it with exact=1).
 tap_text() {
   dump
+  cp /tmp/ui.xml "$OUT/ui-$(date +%s%N).xml" 2>/dev/null
   local xy
-  xy=$(python3 - "$1" <<'PY'
+  xy=$(python3 - "$1" "${2:-0}" <<'PY'
 import re, sys, xml.etree.ElementTree as ET
-want = sys.argv[1].lower()
+want = sys.argv[1].lower(); exact = sys.argv[2] == "1"
 root = ET.parse("/tmp/ui.xml").getroot()
 for n in root.iter("node"):
-    t = " ".join((n.get(k) or "") for k in ("text", "content-desc", "hint"))
-    if want in t.lower():
+    vals = [(n.get(k) or "").strip().lower() for k in ("text", "content-desc", "hint")]
+    if (want in vals) if exact else any(want in v for v in vals):
         x1, y1, x2, y2 = map(int, re.findall(r"\d+", n.get("bounds")))
         print((x1 + x2) // 2, (y1 + y2) // 2)
         break
@@ -44,7 +45,7 @@ PY
   adb shell input tap $xy; echo "tapped $1 at $xy"
 }
 type_text() { adb shell input text "$(printf '%s' "$1" | sed 's/ /%s/g')"; }
-fail() { echo "FAIL: $1"; adb logcat -d > "$OUT/logcat.txt"; kill $SERVER_PID; exit 1; }
+fail() { echo "FAIL: $1"; dump; cp /tmp/ui.xml "$OUT/ui-at-failure.xml"; adb logcat -d > "$OUT/logcat.txt"; kill $SERVER_PID; exit 1; }
 
 # 2. First launch: native "Connect to your school" screen
 adb shell pm clear $PKG >/dev/null
@@ -62,7 +63,7 @@ shot 02-connect-error 1
 adb shell input keyevent KEYCODE_MOVE_END
 for i in $(seq 1 30); do adb shell input keyevent 67; done
 type_text "$APP_URL"
-tap_text "Connect" || fail "connect button not found"
+tap_text "Connect" 1 || fail "connect button not found"
 sleep 8
 shot 03-web-setup
 has_text "Set up your school" || fail "web app did not load in the WebView"
