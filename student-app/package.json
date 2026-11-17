@@ -1,0 +1,26 @@
+{
+  "name": "student-assignment-app",
+  "version": "1.0.0",
+  "description": "Assignment app: Claude drafts rubric feedback, teacher approves before release",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "NODE_ENV=test node --no-warnings --test --test-concurrency=1 test/*.test.js",
+    "backup": "node scripts/backup.js",
+    "restore-test": "node scripts/restore-test.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.9.0",
+    "express": "^4.22.3",
+    "multer": "^2.5.0",
+    "nodemailer": "^10.6.0",
+    "qrcode": "^1.5.4",
+    "zod": "^4.6.7"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  }
+}
