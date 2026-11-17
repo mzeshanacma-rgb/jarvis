@@ -261,6 +261,7 @@ class MainActivity : ComponentActivity() {
 
             override fun onPageFinished(view: WebView, url: String?) {
                 progress?.visibility = View.GONE
+                view.requestFocus()
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {

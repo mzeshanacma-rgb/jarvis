@@ -82,8 +82,10 @@ adb shell am start -W -n $PKG/.MainActivity >/dev/null
 sleep 6
 grep -c "GET /api/me 401 android-app" "$OUT/server.log" | grep -qv '^0$' || fail "app did not reopen the saved server"
 shot 04-sign-in 1
-tap_text "Username" && type_text "admin"
-tap_text "Password" && type_text "AdminPass2026"
+# The username field has focus on the sign-in page; Tab moves to the password field.
+type_text "admin"
+adb shell input keyevent 61
+type_text "AdminPass2026"
 adb shell input keyevent 66
 sleep 6
 shot 05-two-step-sign-in

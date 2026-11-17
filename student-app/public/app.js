@@ -290,6 +290,7 @@ function viewLogin() {
   formField('u', t('login.username'), u), formField('p', t('login.password'), p),
   h('div', { class: 'row' }, h('button', { class: 'btn', type: 'submit' }, t('login.submit')), h('a', { href: '#/forgot' }, t('login.forgot'))),
   h('p', { class: 'muted small' }, t('login.schoolAccounts')));
+  setTimeout(() => u.focus(), 0); // start typing the username straight away
   render(h('div', { class: 'center' }, langPicker(), form, inAndroidShell() ? h('p', {}, h('button', { class: 'btn quiet small', type: 'button', onclick: () => window.AndroidApp.changeServer() }, t('app.changeServer'))) : null, installCard()));
 }
 
